@@ -14,11 +14,15 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -540,5 +544,69 @@ public class EpicWarBot {
 		}
 		return retPairs;
 	}
+	
+	static public String Base36FromInt(int value)
+    {
+        String base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
+        
+        String returnValue = "";
+        do {
+            int x = 0;
+            x = value % base36.length();
+            char y = base36.charAt(x);
+            returnValue = y + returnValue;
+            value = value / 36;
+        } while (value != 0);
+        
+        return returnValue;
+    }
+	
+	private static String md5(String s) {
+		try {
+			MessageDigest digest = java.security.MessageDigest
+					.getInstance("MD5");
+			digest.update(s.getBytes());
+			byte messageDigest[] = digest.digest();
 
+			StringBuffer hexString = new StringBuffer();
+			for (int i = 0; i < messageDigest.length; i++)
+				hexString.append(Integer.toHexString(0xFF & messageDigest[i]));
+			return hexString.toString();
+
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return "";
+
+	}
+	static public String createFingerprint(HashMap<String, String> param1)
+    {
+		final Map<String, String> _loc_3 = new TreeMap<String, String>(new Comparator<String>() {
+		    @Override
+		    public int compare(String lhs, String rhs) {
+		        return lhs.compareTo(rhs);
+		    }
+		});
+        //HashMap<String, String> _loc_3 = new HashMap<String, String>();
+        String _loc_4 = "";
+        for (Entry<String, String> cvl :param1.entrySet())
+        {
+        	String _loc_6_key = cvl.getKey();
+        	String _loc_6_val = cvl.getValue();
+            if (_loc_6_key.contains("X-Env") == true)
+            {
+                int index = 6;
+                String _loc_2 = _loc_6_key.substring(index).toUpperCase(Locale.getDefault());
+                _loc_3.put(_loc_2, _loc_6_val);
+            }
+        }
+
+        for (Entry<String, String> cvl :_loc_3.entrySet())
+        {
+        	String _loc_6_key = cvl.getKey();
+        	String _loc_6_val = cvl.getValue();
+            _loc_4 = _loc_4 + (_loc_6_key + "=" + _loc_6_val);
+        }
+        return _loc_4;
+    }
 }
