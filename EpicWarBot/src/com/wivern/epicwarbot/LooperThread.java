@@ -13,8 +13,9 @@ import android.os.Message;
 public class LooperThread extends AsyncTask<Void, Void, Void> {
 	private MHandler m_handler;
 	private EpicWarBot m_epicBot;
-	public final static int MSG_ID_CONNECT = 1;
-	public final static int MSG_ID_DISCONNECT = 2;
+	public final static int MSG_ID_CONNECT		= 1;
+	public final static int MSG_ID_DISCONNECT	= 2;
+	public final static int MSG_ID_TIMER1		= 3;
 	private WeakReference<MainActivity> m_wrActivity;
 
 	LooperThread(MainActivity mainActivity) {
@@ -95,6 +96,7 @@ public class LooperThread extends AsyncTask<Void, Void, Void> {
 						if (ainfo.bError == true) {
 							SendResponse(msg.what, "VKConnect", ainfo);
 						} else {
+							SendResponse(msg.what, "VKConnect", ainfo);
 							ainfo = m_epicBot.GameConnect();
 						}
 					}
@@ -103,6 +105,9 @@ public class LooperThread extends AsyncTask<Void, Void, Void> {
 			case MSG_ID_DISCONNECT:
 				ainfo = m_epicBot.VKDisconnect();
 				SendResponse(msg.what, "VKDisconnect", ainfo);
+				break;
+			case MSG_ID_TIMER1:
+				//m_epicBot.CollectResources();
 				break;
 			}
 			return;
