@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">EpicWarBot</string>
+    <string name="VkLogin">Login:</string>
+    <string name="VkPassword">Password:</string>
+    <string name="action_settings">Settings</string>
+	<string name="btnConnect">Connect</string>
+	<string name="btnDisconnect">Disconnect</string>
+</resources>
