@@ -2,17 +2,12 @@ package com.wivern.epicwarbot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.ref.WeakReference;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
-import java.net.Proxy;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,7 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -34,20 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.text.TextUtils;
 import android.util.Log;
 
 public class EpicWarBot {
@@ -419,7 +401,7 @@ public class EpicWarBot {
 			}
 		}
 		if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
-			request.setRequestProperty("Cookie", TextUtils.join(";",
+			request.setRequestProperty("Cookie", JoinCookie(";",
 					m_cookieManager.getCookieStore().getCookies()));
 		}
 		
@@ -498,7 +480,7 @@ public class EpicWarBot {
 					request.addRequestProperty("Accept-Language",
 							"en-US,en;q=0.8");
 					if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
-						request.setRequestProperty("Cookie", TextUtils.join(
+						request.setRequestProperty("Cookie", JoinCookie(
 								";", m_cookieManager.getCookieStore()
 										.getCookies()));
 					}
@@ -800,4 +782,18 @@ public class EpicWarBot {
 		
 		return String.valueOf(curr_rnd);
 	}
+	
+    public static String JoinCookie(CharSequence delimiter, List<HttpCookie> list) {
+        StringBuilder sb = new StringBuilder();
+        boolean firstTime = true;
+        for (Object token: list) {
+            if (firstTime) {
+                firstTime = false;
+            } else {
+                sb.append(delimiter);
+            }
+            sb.append(token);
+        }
+        return sb.toString();
+    }
 }
