@@ -94,7 +94,7 @@ public class LooperThread extends AsyncTask<Void, Void, Void> {
 					if (vkLogin != null && vkPassword != null) {
 						ainfo = m_epicBot.VKConnect(vkLogin, vkPassword);
 						if (ainfo.bError == true) {
-							SendResponse(msg.what, "VKConnect", ainfo);
+							SendResponse(msg.what, "VKConnect(not)", ainfo);
 						} else {
 							SendResponse(msg.what, "VKConnect", ainfo);
 							ainfo = m_epicBot.GameConnect();

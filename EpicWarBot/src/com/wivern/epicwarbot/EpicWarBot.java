@@ -16,12 +16,18 @@ import java.net.Proxy;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -117,6 +123,7 @@ public class EpicWarBot {
 	private java.net.CookieManager m_cookieManager;
 
 	private boolean m_vkConnected;
+	private boolean m_gameConnected;
 
 	EpicWarBot() {
 		init(true);
@@ -132,6 +139,7 @@ public class EpicWarBot {
 		m_secret = "";
 		m_cemetery = false;
 		m_vkConnected = false;
+		m_gameConnected = false;
 		if (constructor == true) {
 			m_sessionHeaderX = new HashMap<String, String>();
 			m_arrayGoldMine = new ArrayList<Integer>();
@@ -157,7 +165,7 @@ public class EpicWarBot {
 		AnswerInfo retResult = new AnswerInfo();
 		init(false);
 		Log.d(LOG_PREF, "VKConnect: " + vkLogin + " " + vkPassword);
-		final String urlPath = "http://login.vk.com";
+		final String urlPath = "http://login.vk.com/";
 		HashMap<String, Object> cSendData = new HashMap<String, Object>();
 
 		cSendData.put("email", vkLogin);
@@ -228,7 +236,7 @@ public class EpicWarBot {
 
 		String urlPath = "http://vk.com/al_profile.php";
 		HashMap<String, Object> cSendData = new HashMap<String, Object>();
-		HashMap<String, Object> cSendHeaders = new HashMap<String, Object>();
+		HashMap<String, String> cSendHeaders = new HashMap<String, String>();
 
 		cSendData.put("__query", "clashofthrones");
 		cSendData.put("_ref", "apps");
@@ -253,13 +261,69 @@ public class EpicWarBot {
 				String iUrl = optionPairs.get("src");
 				iUrl = iUrl.replace("\\\\\\", "");
 				cSendData.clear();
-
+				for (Entry<String, String> cItem : paramPairs.entrySet()) {
+					String cKey = cItem.getKey();
+					String cVal = cItem.getValue();
+					if (cKey == "api_url") {
+						cVal = cVal.replace("\\\\\\", "");
+					}
+					cSendData.put(cKey, cVal);
+				}
+				m_sid = (String) cSendData.get("sid");
+				retDict = GetPost(iUrl, "GET", cSendData, cSendHeaders, false,
+						false);
+				if (retDict.status == Status.SUCCESS) {
+					HashMap<String, String> paramFlash = FindPairsInText(
+							retDict.responseStr,
+							"params.flashvars\\s*=[\\s\\n\\r]*\"(.*?)\"",
+							"(.*?)=(.*?)(&|$)");
+					if (paramFlash.containsKey("auth_key")) {
+						m_requestId = 1;
+						m_auth_key = paramFlash.get("auth_key");
+						m_appId = optionPairs.get("aid");
+						m_secret = paramFlash.get("secret");
+						m_sessionHeaderX.put("X-Auth-Token", m_auth_key);
+						m_sessionHeaderX.put("X-Auth-Session-Id",
+								generateSessionKey());
+						m_sessionHeaderX.put("X-Server-Time", GetCurrTimeStr());
+						m_sessionHeaderX.put("X-Auth-Application-Id", m_appId);
+						m_sessionHeaderX.put("X-Auth-User-Id", m_vkId);
+						m_sessionHeaderX.put("X-Auth-Network-Ident",
+								"vkontakte");
+						m_sessionHeaderX.put("X-Env-Library-Version", "0");
+						m_sessionHeaderX
+								.put("X-Request-With", "XMLHttpRequest");
+						// m_sessionHeaderX.put("X-Auth-Signature",
+						// createAuthSignature(post));
+						SendRecvFirstData();
+					}
+				}
 			}
 
 		}
 		return retResult;
 	}
 
+	private void SendRecvFirstData()
+	{
+        HashMap<String, Object> formSendData = new HashMap<String, Object>();
+        String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":" + m_vkId + ",\"fields\":\"can_post,uid,first_name,last_name,nickname,sex,bdate,photo,photo_medium,photo_big,has_mobile,rate,city,country,photo_max_orig\"}),\"friends\":API.friends.get({\"https\":0,\"count\" : 500, \"fields\":\"uid,country,first_name,last_name,photo,photo_medium,photo_big,sex,can_post,bdate,online,photo_max_orig\"}),\"appFriends\":API.getAppFriends(),\"groups\":API.getGroups()};";
+        formSendData.put("api_id", m_appId);
+        formSendData.put("code", cCode);
+        formSendData.put("format", "json");
+        formSendData.put("https", "0");
+        formSendData.put("method", "execute");
+        formSendData.put("rnd", GetRnd());
+        formSendData.put("sid", m_sid);
+        
+        formSendData.put("v", "3.0");
+
+        formSendData.put("sig", CreateSig(m_vkId, formSendData, m_secret));
+        String cSite = "http://vk.com/api.php";
+        ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null, false, true);
+		m_gameConnected = true;
+	}
+	
 	protected ReturnData GetPost(String urlString, String typePostGet,
 			HashMap<String, Object> inData, HashMap<String, String> headers,
 			boolean flJSON, boolean flForm) {
@@ -286,7 +350,7 @@ public class EpicWarBot {
 			if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
 					"get") == true
 					&& postString != "") {
-				cUrlString += "/?" + postString;
+				cUrlString += "?" + postString;
 			}
 		} else {
 			JSONObject json = new JSONObject(inData);
@@ -358,7 +422,25 @@ public class EpicWarBot {
 			request.setRequestProperty("Cookie", TextUtils.join(";",
 					m_cookieManager.getCookieStore().getCookies()));
 		}
+		
+		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
+				"post") == true) {
 
+			try {
+				OutputStreamWriter writer = null;
+				request.connect();
+				writer = new OutputStreamWriter(request.getOutputStream());
+				writer.write(postString);
+				writer.flush();
+				writer.close();
+			} catch (IOException e) {
+				responseData.errorMsg = e.toString();
+				responseData.status = Status.ERROR;
+				return responseData;
+			}
+
+		}
+		
 		if (autoRedirect == false) {
 			int HttpResult;
 			String currLocation;
@@ -431,16 +513,6 @@ public class EpicWarBot {
 		}
 
 		try {
-			if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
-					"post") == true) {
-				OutputStreamWriter writer = null;
-				request.connect();
-				writer = new OutputStreamWriter(request.getOutputStream());
-				writer.write(postString);
-				writer.flush();
-				writer.close();
-			}
-
 			StringBuilder sb = new StringBuilder();
 			int HttpResult = request.getResponseCode();
 			if (HttpResult == HttpURLConnection.HTTP_OK) {
@@ -544,23 +616,22 @@ public class EpicWarBot {
 		}
 		return retPairs;
 	}
-	
-	static public String Base36FromInt(int value)
-    {
-        String base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
-        
-        String returnValue = "";
-        do {
-            int x = 0;
-            x = value % base36.length();
-            char y = base36.charAt(x);
-            returnValue = y + returnValue;
-            value = value / 36;
-        } while (value != 0);
-        
-        return returnValue;
-    }
-	
+
+	static public String Base36FromInt(long value) {
+		String base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+		String returnValue = "";
+		do {
+			int x = 0;
+			x = (int) (value % ((long) base36.length()));
+			char y = base36.charAt(x);
+			returnValue = y + returnValue;
+			value = value / 36;
+		} while (value != 0);
+
+		return returnValue;
+	}
+
 	private static String md5(String s) {
 		try {
 			MessageDigest digest = java.security.MessageDigest
@@ -579,73 +650,154 @@ public class EpicWarBot {
 		return "";
 
 	}
-	static public String createFingerprint(HashMap<String, String> param1)
-    {
-		final Map<String, String> _loc_3 = new TreeMap<String, String>(new Comparator<String>() {
-		    @Override
-		    public int compare(String lhs, String rhs) {
-		        return lhs.compareTo(rhs);
-		    }
-		});
-        //HashMap<String, String> _loc_3 = new HashMap<String, String>();
-        String _loc_4 = "";
-        for (Entry<String, String> cvl :param1.entrySet())
-        {
-        	String _loc_6_key = cvl.getKey();
-        	String _loc_6_val = cvl.getValue();
-            if (_loc_6_key.contains("X-Env") == true)
-            {
-                int index = 6;
-                String _loc_2 = _loc_6_key.substring(index).toUpperCase(Locale.getDefault());
-                _loc_3.put(_loc_2, _loc_6_val);
-            }
-        }
 
-        for (Entry<String, String> cvl :_loc_3.entrySet())
-        {
-        	String _loc_6_key = cvl.getKey();
-        	String _loc_6_val = cvl.getValue();
-            _loc_4 = _loc_4 + (_loc_6_key + "=" + _loc_6_val);
-        }
-        return _loc_4;
-    }
-	
-	String StrPad(String param1, int param2, String param3 , int param4)
-    {
-		if(param3 == null)
-		{
+	public static String createFingerprint(HashMap<String, String> param1) {
+		final Map<String, String> _loc_3 = new TreeMap<String, String>(
+				new Comparator<String>() {
+					@Override
+					public int compare(String lhs, String rhs) {
+						return lhs.compareTo(rhs);
+					}
+				});
+		// HashMap<String, String> _loc_3 = new HashMap<String, String>();
+		String _loc_4 = "";
+		for (Entry<String, String> cvl : param1.entrySet()) {
+			String _loc_6_key = cvl.getKey();
+			String _loc_6_val = cvl.getValue();
+			if (_loc_6_key.contains("X-Env") == true) {
+				int index = 6;
+				String _loc_2 = _loc_6_key.substring(index).toUpperCase(
+						Locale.getDefault());
+				_loc_3.put(_loc_2, _loc_6_val);
+			}
+		}
+
+		for (Entry<String, String> cvl : _loc_3.entrySet()) {
+			String _loc_6_key = cvl.getKey();
+			String _loc_6_val = cvl.getValue();
+			_loc_4 = _loc_4 + (_loc_6_key + "=" + _loc_6_val);
+		}
+		return _loc_4;
+	}
+
+	public static String StrPad(String param1, int param2, String param3,
+			int param4) {
+		if (param3 == null) {
 			param3 = " ";
 		}
-		if(param4 == 0)
-		{
+		if (param4 == 0) {
 			param4 = 1;
 		}
-        int _loc_6 = param4 & 1;
-        int _loc_5 = param4 & 2;
-        
-        if (param3.length() > 1)
-        {
-        	char firstChar = param3.charAt(0);
-            param3 = "" + firstChar;
-        }
-        else
-        {
-            param3 = param3.length() == 0 ? " " : param3;
-        }
-        if (_loc_6 > 0 || _loc_5 > 0)
-        {
-            while (param1.length() < param2)
-            {
-                if (_loc_6 > 0)
-                {
-                    param1 = param3 + param1;
-                }
-                if (param1.length() < param2 && _loc_5 > 0)
-                {
-                    param1 = param1 + param3;
-                }
-            }
-        }
-        return param1;
-    }
+		int _loc_6 = param4 & 1;
+		int _loc_5 = param4 & 2;
+
+		if (param3.length() > 1) {
+			char firstChar = param3.charAt(0);
+			param3 = "" + firstChar;
+		} else {
+			param3 = param3.length() == 0 ? " " : param3;
+		}
+		if (_loc_6 > 0 || _loc_5 > 0) {
+			while (param1.length() < param2) {
+				if (_loc_6 > 0) {
+					param1 = param3 + param1;
+				}
+				if (param1.length() < param2 && _loc_5 > 0) {
+					param1 = param1 + param3;
+				}
+			}
+		}
+		return param1;
+	}
+
+	public static String ChangeDateFormat(String dateString, String inFormat,
+			String outFormat) {
+		SimpleDateFormat dateStringFormatter = new SimpleDateFormat(inFormat,
+				Locale.getDefault());
+		Calendar currDate = new GregorianCalendar();
+		try {
+			currDate.setTime(dateStringFormatter.parse(dateString));
+			dateStringFormatter.applyPattern(outFormat);
+
+			return dateStringFormatter.format(currDate.getTime());
+		} catch (ParseException e) {
+			e.printStackTrace();
+
+		}
+		return "";
+	}
+
+	private String createAuthSignature(HashMap<String, Object> inData) {
+		String postString = "";
+		if (inData != null) {
+			JSONObject currJsonData = new JSONObject(inData);
+			postString = currJsonData.toString();
+		}
+		String _loc_3 = "";
+		_loc_3 += m_sessionHeaderX.get("X-Request-Id");
+		_loc_3 += ":";
+		_loc_3 += m_auth_key;
+		_loc_3 += ":";
+		_loc_3 += m_sessionHeaderX.get("X-Auth-Session-Id");
+		_loc_3 += ":";
+		_loc_3 += postString;
+		_loc_3 += ":";
+		_loc_3 += createFingerprint(m_sessionHeaderX);
+
+		return md5(_loc_3);
+	}
+
+	public static String CreateSig(String vkId,
+			HashMap<String, Object> sendData, String vkSecret) {
+		String currSig = vkId;
+		TreeMap<String, String> cSendData = new TreeMap<String, String>();
+		for (Entry<String, Object> inCKeyVal : sendData.entrySet()) {
+			String inKey = inCKeyVal.getKey();
+			String inVal = inCKeyVal.getValue().toString();
+			cSendData.put(inKey, inVal);
+		}
+
+		for (Entry<String, String> inCKeyVal : cSendData.entrySet()) {
+			String currKey = inCKeyVal.getKey();
+			if (currKey == "sid" || currKey == "sig") {
+				continue;
+			}
+			String currVal = inCKeyVal.getValue();
+			currSig = currSig + (currKey + "=" + currVal);
+		}
+		currSig = currSig + vkSecret;
+		currSig = md5(currSig);
+
+		return currSig;
+	}
+
+	private String generateSessionKey() {
+		Calendar currDate = Calendar.getInstance();
+		int _loc_4 = (int) (currDate.getTimeInMillis() / 1000L);
+		long _loc_5 = _loc_4 & 4294967295L;
+		Random gen_rand = new Random();
+		long _loc_2 = (gen_rand.nextLong() % 4294967295L) + 4294967294L;
+		String _loc_1 = Base36FromInt(_loc_5);
+		String _loc_3 = Base36FromInt(_loc_2);
+		String sessionKey = StrPad(_loc_1, 7, "0", 1)
+				+ StrPad(_loc_3, 7, "0", 1);
+
+		return sessionKey;
+	}
+
+	public static String GetCurrTimeStr() {
+		Calendar currDate = Calendar.getInstance();
+		int currTime = (int) (currDate.getTimeInMillis() / 1000L);
+		String retStr = String.valueOf(currTime);
+
+		return retStr;
+	}
+	
+	public static String GetRnd()
+	{
+		Random gen_rand = new Random();
+		int curr_rnd = gen_rand.nextInt(10000);
+		
+		return String.valueOf(curr_rnd);
+	}
 }
