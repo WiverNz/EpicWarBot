@@ -609,4 +609,43 @@ public class EpicWarBot {
         }
         return _loc_4;
     }
+	
+	String StrPad(String param1, int param2, String param3 , int param4)
+    {
+		if(param3 == null)
+		{
+			param3 = " ";
+		}
+		if(param4 == 0)
+		{
+			param4 = 1;
+		}
+        int _loc_6 = param4 & 1;
+        int _loc_5 = param4 & 2;
+        
+        if (param3.length() > 1)
+        {
+        	char firstChar = param3.charAt(0);
+            param3 = "" + firstChar;
+        }
+        else
+        {
+            param3 = param3.length() == 0 ? " " : param3;
+        }
+        if (_loc_6 > 0 || _loc_5 > 0)
+        {
+            while (param1.length() < param2)
+            {
+                if (_loc_6 > 0)
+                {
+                    param1 = param3 + param1;
+                }
+                if (param1.length() < param2 && _loc_5 > 0)
+                {
+                    param1 = param1 + param3;
+                }
+            }
+        }
+        return param1;
+    }
 }
