@@ -442,7 +442,7 @@ public class EpicWarBot {
 				for (int i = 0; i < jresults.length(); i++) {
 					JSONObject fbobj = jresults.getJSONObject(i);
 					String fcident = fbobj.getString("ident");
-					if (fcident == "giftGetAvailable") {
+					if (fcident.contentEquals("giftGetAvailable") == true) {
 						JSONObject fgiftRes = fbobj.getJSONObject("result");
 						JSONArray fgiftArr = fgiftRes.getJSONArray("gift");
 						for (int j = 0; j < fgiftArr.length(); j++) {
@@ -459,7 +459,7 @@ public class EpicWarBot {
 									cArrayUserIds);
 							m_friendGifts.add(gi);
 						}
-					} else if (fcident == "getBuildings") {
+					} else if (fcident.contentEquals("getBuildings") == true) {
 						JSONObject fbuildRes = fbobj.getJSONObject("result");
 						JSONArray fbuildArray = fbuildRes
 								.getJSONArray("building");
@@ -468,8 +468,8 @@ public class EpicWarBot {
 									.getJSONObject(j);
 							int cTypeOfBuild = fcBuildInfo.getInt("typeId");
 							int cIdOfBuild = fcBuildInfo.getInt("id");
-							int cCompl = fcBuildInfo.getInt("completed");
-							if (cCompl == 1) {
+							boolean cCompl = fcBuildInfo.getBoolean("completed");
+							if (cCompl == true) {
 								if (cTypeOfBuild == MILL_ID) {
 									m_arrayMillMine.add(cIdOfBuild);
 								} else if (cTypeOfBuild == MINE_ID) {
@@ -479,7 +479,7 @@ public class EpicWarBot {
 								}
 							}
 						}
-					} else if (fcident == "checkRegisteredUsers") {
+					} else if (fcident.contentEquals("checkRegisteredUsers") == true) {
 						JSONObject fusersRes = fbobj.getJSONObject("result");
 						JSONArray fusersArray = fusersRes
 								.getJSONArray("result");
@@ -487,7 +487,7 @@ public class EpicWarBot {
 							String cUser = fusersArray.getString(j);
 							m_friendSendGifts.add(cUser);
 						}
-					} else if (fcident == "giftGetReceivers") {
+					} else if (fcident.contentEquals("giftGetReceivers") == true) {
 						JSONObject fusersRes = fbobj.getJSONObject("result");
 						JSONArray fusersArray = fusersRes
 								.getJSONArray("receivers");
@@ -496,10 +496,10 @@ public class EpicWarBot {
 							String cUserId = cUserObj.getString("toUserId");
 							m_friendAlreadySendGifts.add(cUserId);
 						}
-					} else if (fcident == "cemeteryGet") {
+					} else if (fcident.contentEquals("cemeteryGet") == true) {
 						JSONObject fcemeteryRes = fbobj.getJSONObject("result");
 						JSONArray fcemeteryArray = fcemeteryRes
-								.getJSONArray("receivers");
+								.getJSONArray("result");
 						if (fcemeteryArray.length() > 0) {
 							m_cemetery = true;
 						}
