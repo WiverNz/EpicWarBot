@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -615,22 +616,23 @@ public class EpicWarBot {
 	}
 
 	private static String md5(String s) {
+		MessageDigest m;
 		try {
-			MessageDigest digest = java.security.MessageDigest
-					.getInstance("MD5");
-			digest.update(s.getBytes());
-			byte messageDigest[] = digest.digest();
-
-			StringBuffer hexString = new StringBuffer();
-			for (int i = 0; i < messageDigest.length; i++)
-				hexString.append(Integer.toHexString(0xFF & messageDigest[i]));
-			return hexString.toString();
-
+			m = MessageDigest.getInstance("MD5");
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
+			return null;
 		}
-		return "";
-
+		m.reset();
+		m.update(s.getBytes());
+		byte[] digest = m.digest();
+		BigInteger bigInt = new BigInteger(1, digest);
+		String hashtext = bigInt.toString(16);
+		// Now we need to zero pad it if you actually want the full 32 chars.
+		while (hashtext.length() < 32) {
+			hashtext = "0" + hashtext;
+		}
+		return hashtext;
 	}
 
 	public static String createFingerprint(HashMap<String, String> param1) {
