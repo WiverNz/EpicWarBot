@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
+import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.Proxy;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -46,7 +49,7 @@ public class EpicWarBot {
 		NOTINIT, SUCCESS, ERROR
 	}
 
-	public class ReturnData {
+	public static class ReturnData {
 		public String errorMsg;
 		public Status status;
 		public String responseStr;
@@ -106,10 +109,12 @@ public class EpicWarBot {
 	private List<Integer> m_arraySandMine;
 	private boolean m_cemetery;
 	private static String LOG_PREF = "EPIC_WAR_BOT";
-	private java.net.CookieManager m_cookieManager;
+	private CookieManager m_cookieManager;
 
 	private boolean m_vkConnected;
 	private boolean m_gameConnected;
+	private static boolean m_useProxy = false;
+	private static Proxy m_proxy;
 
 	EpicWarBot() {
 		init(true);
@@ -126,6 +131,7 @@ public class EpicWarBot {
 		m_cemetery = false;
 		m_vkConnected = false;
 		m_gameConnected = false;
+		m_proxy = null;
 		if (constructor == true) {
 			m_sessionHeaderX = new HashMap<String, String>();
 			m_arrayGoldMine = new ArrayList<Integer>();
@@ -147,6 +153,14 @@ public class EpicWarBot {
 		}
 	}
 
+	public static void SetUseProxy(boolean useProxy) {
+		m_useProxy = useProxy;
+	}
+
+	public static void SetProxy(String ip, int port) {
+		m_proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ip, port));
+	}
+
 	public AnswerInfo VKConnect(String vkLogin, String vkPassword) {
 		AnswerInfo retResult = new AnswerInfo();
 		init(false);
@@ -159,8 +173,8 @@ public class EpicWarBot {
 		cSendData.put("act", "login");
 		cSendData.put("amp;to", "&amp;");
 
-		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null, false,
-				false);
+		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+				m_cookieManager, false, false);
 		if (retDict.status == Status.SUCCESS) {
 			HashMap<String, String> vkPairs = FindPairsInText(
 					retDict.responseStr, "var vk\\s*=\\s*\\{(.*?)\\}",
@@ -196,8 +210,8 @@ public class EpicWarBot {
 
 		cSendData.put("op", "logout");
 
-		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null, false,
-				false);
+		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+				m_cookieManager, false, false);
 		if (retDict.status == Status.SUCCESS) {
 			retResult
 					.Set("Disconnected!", retDict.status.toString(), false, "");
@@ -233,8 +247,8 @@ public class EpicWarBot {
 		cSendData.put("ref", 9);
 		cSendData.put("_rndVer", 32546);
 
-		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null, false,
-				false);
+		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+				m_cookieManager, false, false);
 		if (retDict.status == Status.SUCCESS) {
 			String patternPair = "[,\\s\\n\\r]*\\\\\"([^:^\\\\]*)\\\\\":\\s*[\\\\\"]*(.*?)(\\\\\"|,|$)";
 			HashMap<String, String> paramPairs = FindPairsInText(
@@ -256,8 +270,8 @@ public class EpicWarBot {
 					cSendData.put(cKey, cVal);
 				}
 				m_sid = (String) cSendData.get("sid");
-				retDict = GetPost(iUrl, "GET", cSendData, cSendHeaders, false,
-						false);
+				retDict = GetPost(iUrl, "GET", cSendData, cSendHeaders,
+						m_cookieManager, false, false);
 				if (retDict.status == Status.SUCCESS) {
 					HashMap<String, String> paramFlash = FindPairsInText(
 							retDict.responseStr,
@@ -290,93 +304,155 @@ public class EpicWarBot {
 		return retResult;
 	}
 
-	private AnswerInfo SendRecvFirstData()
-	{
+	private AnswerInfo SendRecvFirstData() {
 		AnswerInfo retResult = new AnswerInfo();
-		retResult.Set("Not connected!", "", true, "SendRecvFirstData return null data");
-        HashMap<String, Object> formSendData = new HashMap<String, Object>();
-        String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":" + m_vkId + ",\"fields\":\"can_post,uid,first_name,last_name,nickname,sex,bdate,photo,photo_medium,photo_big,has_mobile,rate,city,country,photo_max_orig\"}),\"friends\":API.friends.get({\"https\":0,\"count\" : 500, \"fields\":\"uid,country,first_name,last_name,photo,photo_medium,photo_big,sex,can_post,bdate,online,photo_max_orig\"}),\"appFriends\":API.getAppFriends(),\"groups\":API.getGroups()};";
-        formSendData.put("api_id", m_appId);
-        formSendData.put("code", cCode);
-        formSendData.put("format", "json");
-        formSendData.put("https", "0");
-        formSendData.put("method", "execute");
-        formSendData.put("rnd", GetRnd());
-        formSendData.put("sid", m_sid);
-        
-        formSendData.put("v", "3.0");
+		retResult.Set("Not connected!", "", true,
+				"SendRecvFirstData return null data");
+		HashMap<String, Object> formSendData = new HashMap<String, Object>();
+		String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":"
+				+ m_vkId
+				+ ",\"fields\":\"can_post,uid,first_name,last_name,nickname,sex,bdate,photo,photo_medium,photo_big,has_mobile,rate,city,country,photo_max_orig\"}),\"friends\":API.friends.get({\"https\":0,\"count\" : 500, \"fields\":\"uid,country,first_name,last_name,photo,photo_medium,photo_big,sex,can_post,bdate,online,photo_max_orig\"}),\"appFriends\":API.getAppFriends(),\"groups\":API.getGroups()};";
+		formSendData.put("api_id", m_appId);
+		formSendData.put("code", cCode);
+		formSendData.put("format", "json");
+		formSendData.put("https", "0");
+		formSendData.put("method", "execute");
+		formSendData.put("rnd", GetRnd());
+		formSendData.put("sid", m_sid);
 
-        formSendData.put("sig", CreateSig(m_vkId, formSendData, m_secret));
-        String cSite = "http://vk.com/api.php";
-        ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null, false, true);
+		formSendData.put("v", "3.0");
 
-        
-        List<String> friendsArray = new ArrayList<String>();
-        List<String> appFriendsArray = new ArrayList<String>();
-        String vkbirthday = "";
-        int vkcity = 0;
-        String vkfirstName = "";
-        String vkphotoUrl = "";
-        String vklastName = "";
-        
-        if(retDictForm.status == Status.SUCCESS)
-        {
-        	JSONObject jresponse;
+		formSendData.put("sig", CreateSig(m_vkId, formSendData, m_secret));
+		String cSite = "http://vk.com/api.php";
+		ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null,
+				m_cookieManager, false, true);
+
+		List<String> friendsArray = new ArrayList<String>();
+		List<String> appFriendsArray = new ArrayList<String>();
+		String vkbirthday = "";
+		int vkcity = 0;
+		String vkfirstName = "";
+		String vkphotoUrl = "";
+		String vklastName = "";
+
+		if (retDictForm.status == Status.SUCCESS) {
+			JSONObject jresponse;
 			try {
-				JSONObject retDictFormJson = new JSONObject(new JSONTokener(retDictForm.responseStr));
+				JSONObject retDictFormJson = new JSONObject(new JSONTokener(
+						retDictForm.responseStr));
 				jresponse = retDictFormJson.getJSONObject("response");
-	        	JSONArray juser = jresponse.getJSONArray("user");
-	        	if(juser.length() > 0)
-	        	{
-	        		JSONObject userData = new JSONObject();
-	        		userData = (JSONObject) juser.get(0);
-	        		try
-	        		{
-		                vkfirstName = userData.getString("first_name");
-		                vklastName = userData.getString("last_name");
-		                vkphotoUrl = userData.getString("photo_medium");
-		        		vkbirthday = userData.getString("bdate");
-		        		vkbirthday = ChangeDateFormat(vkbirthday, "dd.M.yyyy", "yyyy-M-dd");
-		        		vkcity = userData.getInt("city");
-	        		}
-	        		catch (JSONException e)
-	        		{
-	        			e.printStackTrace();
-	        		}
-	        	}
-	        	JSONArray jfriends = jresponse.getJSONArray("friends");
-	        	for (int i = 0; i<jfriends.length(); i++)
-	        	{
-	        		JSONObject cjfriend_i = (JSONObject) jfriends.get(i);
-	        		int cjfriendid = cjfriend_i.getInt("uid");
-	        		friendsArray.add(String.valueOf(cjfriendid));
-	        	}
-	        	JSONArray jappfriends = jresponse.getJSONArray("appFriends");
-	        	for (int i = 0; i<jappfriends.length(); i++)
-	        	{
-	        		int cjappfriend = (Integer) jappfriends.get(i);
+				JSONArray juser = jresponse.getJSONArray("user");
+				if (juser.length() > 0) {
+					JSONObject userData = new JSONObject();
+					userData = (JSONObject) juser.get(0);
+					try {
+						vkfirstName = userData.getString("first_name");
+						vklastName = userData.getString("last_name");
+						vkphotoUrl = userData.getString("photo_medium");
+						vkbirthday = userData.getString("bdate");
+						vkbirthday = ChangeDateFormat(vkbirthday, "dd.M.yyyy",
+								"yyyy-M-dd");
+						vkcity = userData.getInt("city");
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+				}
+				JSONArray jfriends = jresponse.getJSONArray("friends");
+				for (int i = 0; i < jfriends.length(); i++) {
+					JSONObject cjfriend_i = (JSONObject) jfriends.get(i);
+					long cjfriendid = cjfriend_i.getLong("uid");
+					friendsArray.add(String.valueOf(cjfriendid));
+				}
+				JSONArray jappfriends = jresponse.getJSONArray("appFriends");
+				for (int i = 0; i < jappfriends.length(); i++) {
+					long cjappfriend = (Long) jappfriends.get(i);
 
-	        		appFriendsArray.add(String.valueOf(cjappfriend));
-	        	}
+					appFriendsArray.add(String.valueOf(cjappfriend));
+				}
 			} catch (JSONException e) {
 				retResult.Set("Not connected!", e.toString(), true,
 						"SendRecvFirstData parse json error");
 			}
-        }
-        
-        if(vkfirstName == "")
-        {
-            return retResult;
-        }
+		}
+
+		if (vkfirstName == "") {
+			return retResult;
+		}
+		HashMap<String, Object> j_referrer = new HashMap<String, Object>();
+		j_referrer.put("type", ToJsonString("user_apps"));
+		j_referrer.put("id", 0);
+		HashMap<String, Object> j_user = new HashMap<String, Object>();
+		j_user.put("country", ToJsonString("function Function() []"));
+		j_user.put("birthday", ToJsonString(vkbirthday));
+		j_user.put("sex", ToJsonString("male"));
+		j_user.put("locale", ToJsonString("en"));
+		j_user.put("id", ToJsonString(m_vkId));
+		j_user.put("city", vkcity);
+		j_user.put("firstName", ToJsonString(vkfirstName));
+		j_user.put("photoUrl", ToJsonString(vkphotoUrl));
+		j_user.put("lastName", ToJsonString(vklastName));
+		j_user.put("referrer", j_referrer);
+		HashMap<String, Object> j_argsRegistration = new HashMap<String, Object>();
+		j_argsRegistration.put("friendIds", friendsArray);
+		j_argsRegistration.put("user", j_user);
+		HashMap<String, Object> j_argscheckRegisteredUsers = new HashMap<String, Object>();
+		j_argscheckRegisteredUsers.put("users", appFriendsArray);
+		HashMap<String, Object> j_argsinvitationGetUsers = new HashMap<String, Object>();
+		j_argsinvitationGetUsers.put("ids", friendsArray);
+		HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
+		List<Object> j_calls = new ArrayList<Object>();
+		j_calls.add(GenCall("registration", j_argsRegistration, null));
+		j_calls.add(GenCall("boostGetAll", j_argsEmpty, null));
+		j_calls.add(GenCall("artefactGetList", j_argsEmpty, null));
+		j_calls.add(GenCall("battleStatisticGet", j_argsEmpty, null));
+		j_calls.add(GenCall("getTime", j_argsEmpty, null));
+		j_calls.add(GenCall("getSelfInfo", j_argsEmpty, null));
+		j_calls.add(GenCall("getDynamicParams", j_argsEmpty, null));
+		j_calls.add(GenCall("getArmyQueue", j_argsEmpty, null));
+		j_calls.add(GenCall("getBuildings", j_argsEmpty, null));
+		j_calls.add(GenCall("heroesGetList", j_argsEmpty, null));
+		j_calls.add(GenCall("getResearchQueue", j_argsEmpty, null));
+		j_calls.add(GenCall("getMissions", j_argsEmpty, null));
+		j_calls.add(GenCall("getQuests", j_argsEmpty, null));
+		j_calls.add(GenCall("getProtections", j_argsEmpty, null));
+		j_calls.add(GenCall("getInvitedBy", j_argsEmpty, null));
+		j_calls.add(GenCall("getInvitedUsers", j_argsEmpty, null));
+		j_calls.add(GenCall("getBonusCrystals", j_argsEmpty, null));
+		j_calls.add(GenCall("getSettings", j_argsEmpty, null));
+		j_calls.add(GenCall("promoGetHalfBilling", j_argsEmpty, null));
+		j_calls.add(GenCall("giftGetAvailable", j_argsEmpty, null));
+		j_calls.add(GenCall("giftGetReceivers", j_argsEmpty, null));
+		j_calls.add(GenCall("cloverGetAll", j_argsEmpty, null));
+		j_calls.add(GenCall("paymentsCount", j_argsEmpty, null));
+		j_calls.add(GenCall("cemeteryGet", j_argsEmpty, null));
+		j_calls.add(GenCall("getNotices", j_argsEmpty, null));
+		j_calls.add(GenCall("allianceGetMessages", j_argsEmpty, null));
+		j_calls.add(GenCall("getGlobalNews", j_argsEmpty, null));
+		j_calls.add(GenCall("battleGetActive", j_argsEmpty, null));
+		j_calls.add(GenCall("spellList", j_argsEmpty, null));
+		j_calls.add(GenCall("spellProductionQueue", j_argsEmpty, null));
+		j_calls.add(GenCall("checkRegisteredUsers", j_argscheckRegisteredUsers,
+				null));
+		j_calls.add(GenCall("invitationGetUsers", j_argsinvitationGetUsers,
+				null));
+		j_calls.add(GenCall("state", j_argsEmpty, null));
+
+		HashMap<String, Object> jsonData = new HashMap<String, Object>();
+		jsonData.put("sesion", null);
+		jsonData.put("calls", j_calls);
+
+		ReturnData retDict = SendRecv(jsonData);
+
 		m_gameConnected = true;
-		
+
 		return retResult;
 	}
 
-	protected ReturnData GetPost(String urlString, String typePostGet,
+	public static ReturnData GetPost(String urlString, String typePostGet,
 			HashMap<String, Object> inData, HashMap<String, String> headers,
-			boolean flJSON, boolean flForm) {
+			CookieManager cookieManager, boolean flJSON, boolean flForm) {
 		boolean autoRedirect = false;
+
 		ReturnData responseData = new ReturnData();
 		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") != true
 				&& typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
@@ -416,16 +492,18 @@ public class EpicWarBot {
 		}
 		HttpURLConnection request;
 		try {
-			// Proxy proxy = new Proxy(Proxy.Type.HTTP, new
-			// InetSocketAddress("192.168.0.4", 8888));
-			request = (HttpURLConnection) (reqURL.openConnection());
+			if (m_useProxy == true && m_proxy != null) {
+				request = (HttpURLConnection) (reqURL.openConnection(m_proxy));
+			} else {
+				request = (HttpURLConnection) (reqURL.openConnection());
+			}
 		} catch (IOException e) {
 			responseData.errorMsg = e.toString();
 			responseData.status = Status.ERROR;
 			return responseData;
 		}
 		request.setInstanceFollowRedirects(autoRedirect);
-		//Log.d(LOG_PREF, "Using proxy: " + request.usingProxy());
+		// Log.d(LOG_PREF, "Using proxy: " + request.usingProxy());
 		request.setDoOutput(true);
 		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
 			request.setDoInput(true);
@@ -467,11 +545,10 @@ public class EpicWarBot {
 				request.addRequestProperty(cVal.getKey(), cVal.getValue());
 			}
 		}
-		if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
+		if (cookieManager.getCookieStore().getCookies().size() > 0) {
 			request.setRequestProperty(
 					"Cookie",
-					JoinCookie(";", m_cookieManager.getCookieStore()
-							.getCookies()));
+					JoinCookie(";", cookieManager.getCookieStore().getCookies()));
 		}
 
 		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
@@ -507,7 +584,7 @@ public class EpicWarBot {
 
 					if (cookiesHeader != null) {
 						for (String cookie : cookiesHeader) {
-							m_cookieManager.getCookieStore().add(null,
+							cookieManager.getCookieStore().add(null,
 									HttpCookie.parse(cookie).get(0));
 						}
 					}
@@ -532,7 +609,13 @@ public class EpicWarBot {
 
 					currUrl = nextURL.toExternalForm();
 					try {
-						request = (HttpURLConnection) nextURL.openConnection();
+						if (m_useProxy == true && m_proxy != null) {
+							request = (HttpURLConnection) nextURL
+									.openConnection(m_proxy);
+						} else {
+							request = (HttpURLConnection) nextURL
+									.openConnection();
+						}
 					} catch (IOException e) {
 						responseData.errorMsg = e.toString();
 						responseData.status = Status.ERROR;
@@ -547,11 +630,11 @@ public class EpicWarBot {
 							"gzip, deflate, lzma, sdch");
 					request.addRequestProperty("Accept-Language",
 							"en-US,en;q=0.8");
-					if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
+					if (cookieManager.getCookieStore().getCookies().size() > 0) {
 						request.setRequestProperty(
 								"Cookie",
-								JoinCookie(";", m_cookieManager
-										.getCookieStore().getCookies()));
+								JoinCookie(";", cookieManager.getCookieStore()
+										.getCookies()));
 					}
 					request.setConnectTimeout(15000);
 					request.setReadTimeout(15000);
@@ -591,7 +674,7 @@ public class EpicWarBot {
 
 				if (cookiesHeader != null) {
 					for (String cookie : cookiesHeader) {
-						m_cookieManager.getCookieStore().add(null,
+						cookieManager.getCookieStore().add(null,
 								HttpCookie.parse(cookie).get(0));
 					}
 				}
@@ -859,12 +942,33 @@ public class EpicWarBot {
 																			// 3...
 		m_sessionHeaderX.put("X-Auth-Signature", createAuthSignature(sendData));
 		ReturnData retDict = GetPost(m_site, "POST", sendData,
-				m_sessionHeaderX, true, false);
+				m_sessionHeaderX, m_cookieManager, true, false);
 		if (m_requestId == 1) {
 			m_sessionHeaderX.remove("X-Auth-Session-Init");
 		}
 		m_requestId = m_requestId + 1;
 
 		return retDict;
+	}
+
+	public static String ToJsonString(String str) {
+		if (str == null) {
+			return "";
+		}
+		return "" + str + "";
+	}
+
+	public static HashMap<String, Object> GenCall(String ident,
+			HashMap<String, Object> args, String name) {
+		HashMap<String, Object> retMap = new HashMap<String, Object>();
+		retMap.put("ident", ToJsonString(ident));
+		retMap.put("args", args);
+		if (name == null) {
+			retMap.put("name", ToJsonString(ident));
+		} else {
+			retMap.put("name", ToJsonString(name));
+		}
+
+		return retMap;
 	}
 }
