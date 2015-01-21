@@ -29,7 +29,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import android.util.Log;
 
@@ -278,7 +281,7 @@ public class EpicWarBot {
 								.put("X-Request-With", "XMLHttpRequest");
 						// m_sessionHeaderX.put("X-Auth-Signature",
 						// createAuthSignature(post));
-						SendRecvFirstData();
+						retResult = SendRecvFirstData();
 					}
 				}
 			}
@@ -287,8 +290,10 @@ public class EpicWarBot {
 		return retResult;
 	}
 
-	private void SendRecvFirstData()
+	private AnswerInfo SendRecvFirstData()
 	{
+		AnswerInfo retResult = new AnswerInfo();
+		retResult.Set("Not connected!", "", true, "SendRecvFirstData return null data");
         HashMap<String, Object> formSendData = new HashMap<String, Object>();
         String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":" + m_vkId + ",\"fields\":\"can_post,uid,first_name,last_name,nickname,sex,bdate,photo,photo_medium,photo_big,has_mobile,rate,city,country,photo_max_orig\"}),\"friends\":API.friends.get({\"https\":0,\"count\" : 500, \"fields\":\"uid,country,first_name,last_name,photo,photo_medium,photo_big,sex,can_post,bdate,online,photo_max_orig\"}),\"appFriends\":API.getAppFriends(),\"groups\":API.getGroups()};";
         formSendData.put("api_id", m_appId);
@@ -304,9 +309,50 @@ public class EpicWarBot {
         formSendData.put("sig", CreateSig(m_vkId, formSendData, m_secret));
         String cSite = "http://vk.com/api.php";
         ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null, false, true);
+
+        JSONObject userData = new JSONObject();
+        List<String> friendsArray = new ArrayList<String>();
+        List<String> appFriendsArray = new ArrayList<String>();
+        if(retDictForm.status == Status.SUCCESS)
+        {
+        	JSONObject jresponse;
+			try {
+				JSONObject retDictFormJson = new JSONObject(new JSONTokener(retDictForm.responseStr));
+				jresponse = retDictFormJson.getJSONObject("response");
+	        	JSONArray juser = jresponse.getJSONArray("user");
+	        	if(juser.length() > 0)
+	        	{
+	        		userData = (JSONObject) juser.get(0);
+	        	}
+	        	JSONArray jfriends = jresponse.getJSONArray("friends");
+	        	for (int i = 0; i<jfriends.length(); i++)
+	        	{
+	        		JSONObject cjfriend_i = (JSONObject) jfriends.get(i);
+	        		int cjfriendid = cjfriend_i.getInt("uid");
+	        		friendsArray.add(String.valueOf(cjfriendid));
+	        	}
+	        	JSONArray jappfriends = jresponse.getJSONArray("appFriends");
+	        	for (int i = 0; i<jappfriends.length(); i++)
+	        	{
+	        		int cjappfriend = (Integer) jappfriends.get(i);
+
+	        		appFriendsArray.add(String.valueOf(cjappfriend));
+	        	}
+			} catch (JSONException e) {
+				retResult.Set("Not connected!", e.toString(), true,
+						"SendRecvFirstData parse json error");
+			}
+        }
+        
+        if(userData.length() == 0)
+        {
+            return retResult;
+        }
 		m_gameConnected = true;
+		
+		return retResult;
 	}
-	
+
 	protected ReturnData GetPost(String urlString, String typePostGet,
 			HashMap<String, Object> inData, HashMap<String, String> headers,
 			boolean flJSON, boolean flForm) {
@@ -359,7 +405,7 @@ public class EpicWarBot {
 			return responseData;
 		}
 		request.setInstanceFollowRedirects(autoRedirect);
-		Log.d(LOG_PREF, "Using proxy: " + request.usingProxy());
+		//Log.d(LOG_PREF, "Using proxy: " + request.usingProxy());
 		request.setDoOutput(true);
 		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
 			request.setDoInput(true);
@@ -402,12 +448,13 @@ public class EpicWarBot {
 			}
 		}
 		if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
-			request.setRequestProperty("Cookie", JoinCookie(";",
-					m_cookieManager.getCookieStore().getCookies()));
+			request.setRequestProperty(
+					"Cookie",
+					JoinCookie(";", m_cookieManager.getCookieStore()
+							.getCookies()));
 		}
-		
-		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
-				"post") == true) {
+
+		if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
 
 			try {
 				OutputStreamWriter writer = null;
@@ -423,7 +470,7 @@ public class EpicWarBot {
 			}
 
 		}
-		
+
 		if (autoRedirect == false) {
 			int HttpResult;
 			String currLocation;
@@ -481,9 +528,10 @@ public class EpicWarBot {
 					request.addRequestProperty("Accept-Language",
 							"en-US,en;q=0.8");
 					if (m_cookieManager.getCookieStore().getCookies().size() > 0) {
-						request.setRequestProperty("Cookie", JoinCookie(
-								";", m_cookieManager.getCookieStore()
-										.getCookies()));
+						request.setRequestProperty(
+								"Cookie",
+								JoinCookie(";", m_cookieManager
+										.getCookieStore().getCookies()));
 					}
 					request.setConnectTimeout(15000);
 					request.setReadTimeout(15000);
@@ -528,6 +576,7 @@ public class EpicWarBot {
 					}
 				}
 				responseData.responseStr = sb.toString();
+
 				responseData.status = Status.SUCCESS;
 			} else {
 				responseData.errorMsg = request.getResponseMessage();
@@ -539,29 +588,6 @@ public class EpicWarBot {
 			responseData.status = Status.ERROR;
 			return responseData;
 		}
-
-		// var responseStr:NSString = NSString(data:urlData!,
-		// encoding:NSASCIIStringEncoding)!
-		// responseData["responseStr"] = responseStr;
-		//
-		// // NSLog("Response ==> %@", responseStr)
-		//
-		// if (res.statusCode >= 200 && res.statusCode < 300 && (flJSON ||
-		// flForm))
-		// {
-		// var error: NSError?
-		// let jsonData:NSDictionary =
-		// NSJSONSerialization.JSONObjectWithData(urlData!,
-		// options:NSJSONReadingOptions.MutableContainers , error: &error) as
-		// NSDictionary
-		// responseData["responseJson"] = jsonData
-		//
-		// } else {
-		// // NSLog("res.statusCode < 200 || res.statusCode >= 300");
-		// }
-		// } else {
-		// NSLog("urlData == nil");
-		// }
 
 		return responseData;
 	}
@@ -776,26 +802,49 @@ public class EpicWarBot {
 
 		return retStr;
 	}
-	
-	public static String GetRnd()
-	{
+
+	public static String GetRnd() {
 		Random gen_rand = new Random();
 		int curr_rnd = gen_rand.nextInt(10000);
-		
+
 		return String.valueOf(curr_rnd);
 	}
-	
-    public static String JoinCookie(CharSequence delimiter, List<HttpCookie> list) {
-        StringBuilder sb = new StringBuilder();
-        boolean firstTime = true;
-        for (Object token: list) {
-            if (firstTime) {
-                firstTime = false;
-            } else {
-                sb.append(delimiter);
-            }
-            sb.append(token);
-        }
-        return sb.toString();
-    }
+
+	public static String JoinCookie(CharSequence delimiter,
+			List<HttpCookie> list) {
+		StringBuilder sb = new StringBuilder();
+		boolean firstTime = true;
+		for (Object token : list) {
+			if (firstTime) {
+				firstTime = false;
+			} else {
+				sb.append(delimiter);
+			}
+			sb.append(token);
+		}
+		return sb.toString();
+	}
+
+	private ReturnData SendRecv(HashMap<String, Object> sendData) {
+		if (m_requestId == 1) {
+			m_sessionHeaderX.put("X-Auth-Session-Init", "1"); // only for first
+		}
+		m_sessionHeaderX.put("X-Request-Id", String.valueOf(m_requestId)); // increase
+																			// it
+																			// after
+																			// each
+																			// send
+																			// 1,
+																			// 2,
+																			// 3...
+		m_sessionHeaderX.put("X-Auth-Signature", createAuthSignature(sendData));
+		ReturnData retDict = GetPost(m_site, "POST", sendData,
+				m_sessionHeaderX, true, false);
+		if (m_requestId == 1) {
+			m_sessionHeaderX.remove("X-Auth-Session-Init");
+		}
+		m_requestId = m_requestId + 1;
+
+		return retDict;
+	}
 }
