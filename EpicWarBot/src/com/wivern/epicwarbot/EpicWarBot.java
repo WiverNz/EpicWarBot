@@ -310,9 +310,15 @@ public class EpicWarBot {
         String cSite = "http://vk.com/api.php";
         ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null, false, true);
 
-        JSONObject userData = new JSONObject();
+        
         List<String> friendsArray = new ArrayList<String>();
         List<String> appFriendsArray = new ArrayList<String>();
+        String vkbirthday = "";
+        int vkcity = 0;
+        String vkfirstName = "";
+        String vkphotoUrl = "";
+        String vklastName = "";
+        
         if(retDictForm.status == Status.SUCCESS)
         {
         	JSONObject jresponse;
@@ -322,7 +328,21 @@ public class EpicWarBot {
 	        	JSONArray juser = jresponse.getJSONArray("user");
 	        	if(juser.length() > 0)
 	        	{
+	        		JSONObject userData = new JSONObject();
 	        		userData = (JSONObject) juser.get(0);
+	        		try
+	        		{
+		                vkfirstName = userData.getString("first_name");
+		                vklastName = userData.getString("last_name");
+		                vkphotoUrl = userData.getString("photo_medium");
+		        		vkbirthday = userData.getString("bdate");
+		        		vkbirthday = ChangeDateFormat(vkbirthday, "dd.M.yyyy", "yyyy-M-dd");
+		        		vkcity = userData.getInt("city");
+	        		}
+	        		catch (JSONException e)
+	        		{
+	        			e.printStackTrace();
+	        		}
 	        	}
 	        	JSONArray jfriends = jresponse.getJSONArray("friends");
 	        	for (int i = 0; i<jfriends.length(); i++)
@@ -344,7 +364,7 @@ public class EpicWarBot {
 			}
         }
         
-        if(userData.length() == 0)
+        if(vkfirstName == "")
         {
             return retResult;
         }
