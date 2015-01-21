@@ -517,6 +517,184 @@ public class EpicWarBot {
 		return retResult;
 	}
 
+    public AnswerInfo CemeteryFarm()
+    {
+    	AnswerInfo retResult = new AnswerInfo();
+		
+        if(m_cemetery == true)
+        {
+    		HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
+    		List<Object> j_calls = new ArrayList<Object>();
+    		j_calls.add(GenCall("group_0_body", j_argsEmpty, "cemeteryFarm"));
+    		j_calls.add(GenCall("group_1_body", j_argsEmpty, "state"));
+    		HashMap<String, Object> jsonData = new HashMap<String, Object>();
+    		jsonData.put("sesion", null);
+    		jsonData.put("calls", j_calls);
+
+    		ReturnData retDict = SendRecv(jsonData);
+    		if (retDict.status == Status.SUCCESS) {
+    			retResult.Set("Cemetery farm ok!", "", false,"");
+    		}
+        }
+        return retResult;
+    }
+    
+    public AnswerInfo GiftSend()
+    {
+    	AnswerInfo retResult = new AnswerInfo();
+        List<String> friendNeedSendGifts = new ArrayList<String>();
+        for (String cUserSend: m_friendSendGifts)
+        {
+            boolean needSend = true;
+            for(String cUserAlreadySend: m_friendAlreadySendGifts)
+            {
+                if (cUserSend.contentEquals(cUserAlreadySend) == true)
+                {
+                    needSend = false;
+                    break;
+                }
+            }
+            if (needSend == true)
+            {
+                friendNeedSendGifts.add(cUserSend);
+            }
+        }
+        if (friendNeedSendGifts.size() > 0)
+        {
+    		HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
+    		HashMap<String, Object> j_argsUsers = new HashMap<String, Object>();
+    		j_argsUsers.put("users", friendNeedSendGifts);
+    		HashMap<String, Object> j_argsUsersEmpty = new HashMap<String, Object>();
+    		j_argsUsersEmpty.put("users", new ArrayList<Object>());
+    		List<Object> j_calls = new ArrayList<Object>();
+    		j_calls.add(GenCall("group_0_body", j_argsUsers, "giftSend"));
+    		j_calls.add(GenCall("group_1_body", j_argsUsersEmpty, "getUsersInfo"));
+    		j_calls.add(GenCall("group_2_body", j_argsEmpty, "state"));
+    		HashMap<String, Object> jsonData = new HashMap<String, Object>();
+    		jsonData.put("sesion", null);
+    		jsonData.put("calls", j_calls);
+
+    		ReturnData retDict = SendRecv(jsonData);
+    		if (retDict.status == Status.SUCCESS) {
+    			retResult.Set("Gift send ok!", "", false,"");
+    		}
+        }
+        
+        return retResult;
+    }
+    
+    public boolean giftFarm(GiftInfo giftInfo)
+    {
+    	boolean farmed = false;
+		HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
+		HashMap<String, Object> j_argsuserId = new HashMap<String, Object>();
+		j_argsuserId.put("userId", giftInfo.userId);
+		HashMap<String, Object> j_argsids = new HashMap<String, Object>();
+		j_argsids.put("ids", giftInfo.ids_arr);
+		List<Object> j_calls = new ArrayList<Object>();
+		j_calls.add(GenCall("group_0_body", j_argsuserId, "giftFarm"));
+		j_calls.add(GenCall("group_1_body", j_argsids, "removeNotices"));
+		j_calls.add(GenCall("group_2_body", j_argsEmpty, "giftGetAvailable"));
+		j_calls.add(GenCall("group_3_body", j_argsEmpty, "state"));
+		HashMap<String, Object> jsonData = new HashMap<String, Object>();
+		jsonData.put("sesion", null);
+		jsonData.put("calls", j_calls);
+
+		ReturnData retDict = SendRecv(jsonData);
+		if (retDict.status == Status.SUCCESS) {
+			farmed = true;
+		}
+		
+		return farmed;
+    }
+    
+    public AnswerInfo FarmAllGifts()
+    {
+    	AnswerInfo retResult = new AnswerInfo();
+    	boolean allFarmed = true;
+        for (GiftInfo currGiftInfo: m_friendGifts)
+        {
+            if(giftFarm(currGiftInfo) == false)
+            {
+            	allFarmed = false;
+            	break;
+            }
+        }
+        if(allFarmed == true)
+        {
+        	retResult.Set("All farmed!", "", false,"");
+        }
+        else
+        {
+        	retResult.Set("Error farmed!", "", true,"");
+        }
+        
+        return retResult;
+    }
+    
+    public boolean collectResourceFromBuilding(int id)
+    {
+    	boolean collected = false;
+		HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
+		HashMap<String, Object> j_argsbuildingId = new HashMap<String, Object>();
+		j_argsbuildingId.put("buildingId", id);
+		List<Object> j_calls = new ArrayList<Object>();
+		j_calls.add(GenCall("group_0_body", j_argsbuildingId, "collectResource"));
+		j_calls.add(GenCall("group_1_body", j_argsEmpty, "state"));
+		HashMap<String, Object> jsonData = new HashMap<String, Object>();
+		jsonData.put("sesion", null);
+		jsonData.put("calls", j_calls);
+
+		ReturnData retDict = SendRecv(jsonData);
+		if (retDict.status == Status.SUCCESS) {
+			collected = true;
+		}
+		
+		return collected;
+    }
+    
+    public AnswerInfo collectAllResources()
+    {
+    	AnswerInfo retResult = new AnswerInfo();
+    	boolean collected = true;
+    	
+        for (int cId: m_arrayMillMine)
+        {
+            if(collectResourceFromBuilding(cId) == false)
+            {
+            	collected = false;
+            	break;
+            }
+        }
+        for (int cId: m_arrayGoldMine)
+        {
+            if(collectResourceFromBuilding(cId) == false)
+            {
+            	collected = false;
+            	break;
+            }
+        }
+        for (int cId: m_arraySandMine)
+        {
+            if(collectResourceFromBuilding(cId) == false)
+            {
+            	collected = false;
+            	break;
+            }
+        }
+        
+        if(collected == true)
+        {
+        	retResult.Set("All collected!", "", false,"");
+        }
+        else
+        {
+        	retResult.Set("Error collected!", "", true,"");
+        }
+        
+        return retResult;
+    }
+	
 	public static ReturnData GetPost(String urlString, String typePostGet,
 			HashMap<String, Object> inData, HashMap<String, String> headers,
 			CookieManager cookieManager, boolean flJSON, boolean flForm) {
