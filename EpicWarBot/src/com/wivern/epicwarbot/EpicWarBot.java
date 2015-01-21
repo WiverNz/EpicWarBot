@@ -43,22 +43,14 @@ public class EpicWarBot {
 	public class GiftInfo {
 		public String userId;
 		public List<String> ids_arr;
+		GiftInfo(String uid, List<String> idsarr) {
+			userId = uid;
+			ids_arr = idsarr;
+		}
 	}
 
 	public enum Status {
 		NOTINIT, SUCCESS, ERROR
-	}
-
-	public static class ReturnData {
-		public String errorMsg;
-		public Status status;
-		public String responseStr;
-
-		ReturnData() {
-			errorMsg = "";
-			status = Status.NOTINIT;
-			responseStr = "";
-		}
 	}
 
 	private String m_vkId;
@@ -344,7 +336,7 @@ public class EpicWarBot {
 				JSONArray juser = jresponse.getJSONArray("user");
 				if (juser.length() > 0) {
 					JSONObject userData = new JSONObject();
-					userData = (JSONObject) juser.get(0);
+					userData = juser.getJSONObject(0);
 					try {
 						vkfirstName = userData.getString("first_name");
 						vklastName = userData.getString("last_name");
@@ -359,7 +351,7 @@ public class EpicWarBot {
 				}
 				JSONArray jfriends = jresponse.getJSONArray("friends");
 				for (int i = 0; i < jfriends.length(); i++) {
-					JSONObject cjfriend_i = (JSONObject) jfriends.get(i);
+					JSONObject cjfriend_i = jfriends.getJSONObject(i);
 					long cjfriendid = cjfriend_i.getLong("uid");
 					friendsArray.add(String.valueOf(cjfriendid));
 				}
@@ -442,8 +434,85 @@ public class EpicWarBot {
 		jsonData.put("calls", j_calls);
 
 		ReturnData retDict = SendRecv(jsonData);
+		if (retDict.status == Status.SUCCESS) {
+			try {
+				JSONObject retDictFormJson = new JSONObject(new JSONTokener(
+						retDict.responseStr));
+				JSONArray jresults = retDictFormJson.getJSONArray("results");
+				for (int i = 0; i < jresults.length(); i++) {
+					JSONObject fbobj = jresults.getJSONObject(i);
+					String fcident = fbobj.getString("ident");
+					if (fcident == "giftGetAvailable") {
+						JSONObject fgiftRes = fbobj.getJSONObject("result");
+						JSONArray fgiftArr = fgiftRes.getJSONArray("gift");
+						for (int j = 0; j < fgiftArr.length(); j++) {
+							JSONObject cGiftInfo = fgiftArr.getJSONObject(j);
+							String cGiftIDS = cGiftInfo.getString("id");
+							JSONObject cGiftBody = cGiftInfo
+									.getJSONObject("body");
+							JSONObject cGiftUserInfo = cGiftBody
+									.getJSONObject("userInfo");
+							String cGiftUserId = cGiftUserInfo.getString("id");
+							List<String> cArrayUserIds = new ArrayList<String>();
+							cArrayUserIds.add(cGiftIDS);
+							GiftInfo gi = new GiftInfo(cGiftUserId,
+									cArrayUserIds);
+							m_friendGifts.add(gi);
+						}
+					} else if (fcident == "getBuildings") {
+						JSONObject fbuildRes = fbobj.getJSONObject("result");
+						JSONArray fbuildArray = fbuildRes
+								.getJSONArray("building");
+						for (int j = 0; j < fbuildArray.length(); j++) {
+							JSONObject fcBuildInfo = fbuildArray
+									.getJSONObject(j);
+							int cTypeOfBuild = fcBuildInfo.getInt("typeId");
+							int cIdOfBuild = fcBuildInfo.getInt("id");
+							int cCompl = fcBuildInfo.getInt("completed");
+							if (cCompl == 1) {
+								if (cTypeOfBuild == MILL_ID) {
+									m_arrayMillMine.add(cIdOfBuild);
+								} else if (cTypeOfBuild == MINE_ID) {
+									m_arrayGoldMine.add(cIdOfBuild);
+								} else if (cTypeOfBuild == SAND_ID) {
+									m_arraySandMine.add(cIdOfBuild);
+								}
+							}
+						}
+					} else if (fcident == "checkRegisteredUsers") {
+						JSONObject fusersRes = fbobj.getJSONObject("result");
+						JSONArray fusersArray = fusersRes
+								.getJSONArray("result");
+						for (int j = 0; j < fusersArray.length(); j++) {
+							String cUser = fusersArray.getString(j);
+							m_friendSendGifts.add(cUser);
+						}
+					} else if (fcident == "giftGetReceivers") {
+						JSONObject fusersRes = fbobj.getJSONObject("result");
+						JSONArray fusersArray = fusersRes
+								.getJSONArray("receivers");
+						for (int j = 0; j < fusersArray.length(); j++) {
+							JSONObject cUserObj = fusersArray.getJSONObject(j);
+							String cUserId = cUserObj.getString("toUserId");
+							m_friendAlreadySendGifts.add(cUserId);
+						}
+					} else if (fcident == "cemeteryGet") {
+						JSONObject fcemeteryRes = fbobj.getJSONObject("result");
+						JSONArray fcemeteryArray = fcemeteryRes
+								.getJSONArray("receivers");
+						if (fcemeteryArray.length() > 0) {
+							m_cemetery = true;
+						}
+					}
+				}
+				m_gameConnected = true;
+				retResult.Set("Game connected!", "", true, "");
+			} catch (JSONException e) {
+				retResult.Set("Not connected!", e.toString(), true,
+						"retDictFormJson parse error " + retDict.responseStr);
+			}
 
-		m_gameConnected = true;
+		}
 
 		return retResult;
 	}
