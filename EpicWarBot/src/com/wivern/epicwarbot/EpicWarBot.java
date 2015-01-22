@@ -40,6 +40,7 @@ import org.json.JSONTokener;
 import android.util.Log;
 
 public class EpicWarBot {
+	// Info struct for users
 	public class GiftInfo {
 		public String userId;
 		public List<String> ids_arr;
