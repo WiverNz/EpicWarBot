@@ -9,6 +9,6 @@ interface IBotService {
      * and return values in AIDL.
      */
     //void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString);
-    oneway void loadAlbums(in IBotServiceCallback listener);
-    void loadAlbums2(in int i);
+    oneway void Connect(in IBotServiceCallback listener);
+    void SetVKLoginAndPass(in String login, in String password);
 }

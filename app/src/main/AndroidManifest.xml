@@ -23,7 +23,7 @@
             android:process=":remote"
             android:exported="true" >
             <intent-filter>
-                <action android:name="service.Calculator" />
+                <action android:name="service.EpicWarBot" />
             </intent-filter>
         </service>
     </application>

@@ -9,5 +9,5 @@ interface IBotServiceCallback {
      * and return values in AIDL.
      */
     //void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString);
-    oneway void albumItemLoaded(in int a);
+    oneway void OnConnectedResult(in String result);
 }
