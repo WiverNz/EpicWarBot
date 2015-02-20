@@ -91,6 +91,24 @@
                     android:text="@string/btnDisconnect"
                     android:textSize="12sp"/>
             </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/btnStartService"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btnStartService"
+                    android:textSize="12sp"/>
+
+                <Button
+                    android:id="@+id/btnStopService"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/btnStopService"
+                    android:textSize="12sp"/>
+            </TableRow>
         </TableLayout>
     </TableLayout>
 

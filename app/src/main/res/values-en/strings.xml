@@ -7,4 +7,6 @@
     <string name="VkPassword">Password:</string>
     <string name="btnConnect">Connect</string>
     <string name="btnDisconnect">Disconnect</string>
+    <string name="btnStartService">Start service</string>
+    <string name="btnStopService">Stop service</string>
 </resources>

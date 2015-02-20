@@ -5,12 +5,12 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,73 +22,135 @@ import android.widget.Toast;
 /**
  * @since 1.0
  * Main activity class
- * http://www.compiletimeerror.com/2015/01/android-aidl-tutorial-with-example.html#.VOB3T9hoh5I
- * http://habrahabr.ru/post/139432/
  */
-public class MainActivity extends ActionBarActivity implements View.OnClickListener {
+public class MainActivity extends ActionBarActivity
+        implements View.OnClickListener {
     /**
-     * @since 1.0
-     * tag for log
+     * log tag.
      */
     private final String mLogTag = "BotMainActivity";
     /**
-     * @since 1.0
-     * is bound captured
+     * is bound captured.
      */
     private boolean mBound = false;
+
     /**
-     * @since 1.0
-     * add service
+     * add service.
      */
     public enum MsgId {
-        NOT_INIT, CONNECT, DISCONNECT
+        /**
+         * not initialized msg.
+         */
+        NOT_INIT,
+        /**
+         * connected msg.
+         */
+        CONNECT,
+        /**
+         * disconnected msg.
+         */
+        DISCONNECT
     }
-    Button m_btnConnect;
-    Button m_btnDisconnect;
-    EditText m_vkLogin;
-    EditText m_vkPassword;
-    private MHandler m_handler;
 
-    protected IBotService mServiceApi;
-    protected IBotServiceCallback mServiceCallback;
-    ServiceConnection mBotServiceConnection;
-    Intent mIntent;
-    MainService mService;
+    /**
+     * button connect.
+     */
+    private Button mBtnConnect;
+    /**
+     * button disconnect.
+     */
+    private Button mBtnDisconnect;
+    /**
+     * button start service.
+     */
+    private Button mBtnStartService;
+    /**
+     * button stop service.
+     */
+    private Button mBtnStopService;
+    /**
+     * edit text field for vk login.
+     */
+    private EditText mVkLogin;
+    /**
+     * edit text field for vk password.
+     */
+    private EditText mVkPassword;
+    /**
+     * handler for send messages from service callback functions
+     * to main activity.
+     */
+    private MHandler mHandler;
+    /**
+     * api for use the service.
+     */
+    private IBotService mServiceApi;
+    /**
+     * callback stub for service.
+     */
+    private IBotServiceCallback mServiceCallback;
+    /**
+     * service connection.
+     */
+    private ServiceConnection mBotServiceConnection;
+    /**
+     * intent for service.
+     */
+    private Intent mIntent;
+    /**
+     * main service object.
+     */
+    private MainService mService;
+
+    /**
+     * on create activity.
+     *
+     * @param savedInstanceState state
+     */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected final void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        m_btnConnect = (Button) this.findViewById(R.id.btnConnect);
-        m_btnConnect.setOnClickListener(this);
-        m_btnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
-        m_btnDisconnect.setOnClickListener(this);
-        m_vkLogin = (EditText) this.findViewById(R.id.etVkLogin);
-        m_vkPassword = (EditText) this.findViewById(R.id.etVkPassword);
-        m_vkLogin.setText("13602098361");
-        m_vkPassword.setText("");
-        m_handler = new MHandler(this);
+        mBtnConnect = (Button) this.findViewById(R.id.btnConnect);
+        mBtnConnect.setOnClickListener(this);
+        mBtnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
+        mBtnDisconnect.setOnClickListener(this);
+        mBtnStartService = (Button) this.findViewById(R.id.btnStartService);
+        mBtnStartService.setOnClickListener(this);
+        mBtnStopService = (Button) this.findViewById(R.id.btnStopService);
+        mBtnStopService.setOnClickListener(this);
+        mVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
+        mVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
+        mVkLogin.setText("13602098361");
+        mVkPassword.setText("");
+        mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
         mIntent.setAction("service.EpicWarBot");
-        ConnectToService();
+        connectToService();
     }
 
-    protected void ConnectToService()
-    {
-        mBotServiceConnection = new ServiceConnection()
-        {
+    /**
+     * Connect to service.
+     *
+     * @return is bound (boolean)
+     */
+    protected final boolean connectToService() {
+        mBotServiceConnection = new ServiceConnection() {
             @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
+            public void onServiceConnected(final ComponentName name,
+                                           final IBinder service) {
                 mServiceApi = IBotService.Stub.asInterface(service);
                 mServiceCallback = new IBotServiceCallback.Stub() {
                     @Override
-                    public void OnConnectedResult(String result) throws RemoteException {
+                    public void onConnectedResult(final String result)
+                            throws RemoteException {
                         Message msg = new Message();
                         msg.what = 1;
                         Bundle sendData = new Bundle();
                         sendData.putString("result", result);
                         msg.setData(sendData);
-                        m_handler.sendMessage(msg);
+                        mHandler.sendMessage(msg);
                     }
                 };
                 mBound = true;
@@ -96,28 +158,43 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             }
 
             @Override
-            public void onServiceDisconnected(ComponentName name) {
+            public void onServiceDisconnected(final ComponentName name) {
                 mServiceApi = null;
                 mServiceCallback = null;
                 mBound = false;
                 Log.d(mLogTag, "Service disconnected");
             }
         };
-        if (mBound == false) {
+        if (mBound) {
             // binding to remote service
-            bindService(mIntent, mBotServiceConnection, Service.BIND_AUTO_CREATE);
+            bindService(mIntent, mBotServiceConnection,
+                    Service.BIND_AUTO_CREATE);
         }
+
+        return mBound;
     }
 
+    /**
+     * on create options menu.
+     *
+     * @param menu
+     * @return true
+     */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public final boolean onCreateOptionsMenu(final Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
+    /**
+     * on options item selected.
+     *
+     * @param item menu item
+     * @return onOptionsItemSelected
+     */
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public final boolean onOptionsItemSelected(final MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
@@ -131,14 +208,18 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * listener for button clicks.
+     *
+     * @param v curr button
+     */
     @Override
-    public void onClick(View v) {
+    public final void onClick(final View v) {
         switch (v.getId()) {
             case R.id.btnConnect:
-                if(mBound == true)
-                {
+                if (mBound) {
                     try {
-                        mServiceApi.Connect(mServiceCallback);
+                        mServiceApi.connect(mServiceCallback);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -147,31 +228,49 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 //                if (m_engineLooper != null) {
 //                    Bundle sdata = new Bundle();
 //                    sdata.putString("login", m_vkLogin.getText().toString());
-//                    sdata.putString("password", m_vkPassword.getText().toString());
-//                    m_engineLooper.SendMessage(LooperThread.MSG_ID_CONNECT, sdata);
+//    sdata.putString("password", m_vkPassword.getText().toString());
+//   m_engineLooper.SendMessage(LooperThread.MSG_ID_CONNECT, sdata);
 //                }
                 break;
             case R.id.btnDisconnect:
 //                if (m_engineLooper != null) {
 //                    m_engineLooper
-//                            .SendMessage(LooperThread.MSG_ID_DISCONNECT, null);
+//   .SendMessage(LooperThread.MSG_ID_DISCONNECT, null);
 //                }
+                break;
+            default:
                 break;
         }
     }
-
+    /**
+     * @since 1.0
+     * handler class
+     */
     @SuppressLint("HandlerLeak")
     public class MHandler extends Handler {
-        MainActivity m_activity;
+        /**
+         * link to main activity.
+         */
+        private MainActivity mActivity;
 
-        MHandler(MainActivity ma) {
-            m_activity = ma;
+        /**
+         * constructor for handler.
+         *
+         * @param activity main acivity
+         */
+        MHandler(final MainActivity activity) {
+            mActivity = activity;
         }
 
+        /**
+         * handle message.
+         *
+         * @param msg message
+         */
         @Override
-        public void handleMessage(Message msg) {
+        public final void handleMessage(final Message msg) {
             super.handleMessage(msg);
-            if (m_activity != null) {
+            if (mActivity != null) {
                 MsgId currMsgId = MsgId.values()[msg.what];
                 switch (currMsgId) {
                     case CONNECT:
@@ -179,10 +278,9 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
                         if (sendData != null) {
                             String result = sendData.getString("result");
                             Toast.makeText(getApplicationContext(),
-                                    result, Toast.LENGTH_SHORT)
-                                    .show();
+                                    result, Toast.LENGTH_SHORT).show();
                         }
-                                                 // LooperThread.MSG_ID_CONNECT
+                        // LooperThread.MSG_ID_CONNECT
 //                        Bundle sdata = msg.getData();
 //                        if (sdata != null) {
 //                            String funcInfo = sdata.getString("funcInfo");
@@ -202,6 +300,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 //                            }
 //                        }
 
+                        break;
+                    default:
                         break;
                 }
             }

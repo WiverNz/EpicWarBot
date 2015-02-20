@@ -1,14 +1,6 @@
 package wivern.com.epicwarbot;
 
-import java.lang.ref.WeakReference;
-import java.util.Map.Entry;
-
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 
 public class LooperThread extends AsyncTask<Void, Void, Void> {
 //	private MHandler m_handler;

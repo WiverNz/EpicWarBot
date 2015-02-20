@@ -63,12 +63,12 @@ public class MainService extends Service {
         }
 
         @Override
-        public void Connect(IBotServiceCallback listener) throws RemoteException {
-            listener.OnConnectedResult("test result");
+        public void connect(IBotServiceCallback listener) throws RemoteException {
+            listener.onConnectedResult("test result");
         }
 
         @Override
-        public void SetVKLoginAndPass(String login, String password) throws RemoteException {
+        public void setVKLoginAndPass(String login, String password) throws RemoteException {
 
         }
     };
