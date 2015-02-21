@@ -167,28 +167,28 @@ public class EpicWarBot {
 
 		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
 				m_cookieManager, false, false);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			HashMap<String, String> vkPairs = FindPairsInText(
-					retDict.responseStr, "var vk\\s*=\\s*\\{(.*?)\\}",
+					retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
 					"[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
 			if (vkPairs.containsKey("id") == true) {
 				m_vkId = vkPairs.get("id");
 				if (m_vkId != "0") {
 					m_vkConnected = true;
-					retResult.Set("Connected!", retDict.status.toString(),
+					retResult.set("Connected!", retDict.getStatus().toString(),
 							false, "");
 				} else {
-					retResult.Set("Not connected!", retDict.status.toString(),
+					retResult.set("Not connected!", retDict.getStatus().toString(),
 							true, "Authorization problem: vkId == 0");
 				}
 			} else {
-				retResult.Set("Not connected!", retDict.status.toString(),
+				retResult.set("Not connected!", retDict.getStatus().toString(),
 						true, "Authorization problem: var vk id not found!");
 			}
 		} else {
-			Log.d(LOG_PREF, retDict.errorMsg);
-			retResult.Set("Not connected!", retDict.status.toString(), true,
-					"retDict.status != Status.SUCCESS");
+			Log.d(LOG_PREF, retDict.getErrorMsg());
+			retResult.set("Not connected!", retDict.getStatus().toString(), true,
+					"retDict.getStatus() != Status.SUCCESS");
 		}
 		return retResult;
 	}
@@ -204,13 +204,13 @@ public class EpicWarBot {
 
 		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
 				m_cookieManager, false, false);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			retResult
-					.Set("Disconnected!", retDict.status.toString(), false, "");
+					.set("Disconnected!", retDict.getStatus().toString(), false, "");
 		} else {
-			Log.d(LOG_PREF, retDict.errorMsg);
-			retResult.Set("Not disconnected!", retDict.status.toString(), true,
-					"retDict.status != Status.SUCCESS");
+			Log.d(LOG_PREF, retDict.getErrorMsg());
+			retResult.set("Not disconnected!", retDict.getStatus().toString(), true,
+					"retDict.getStatus() != Status.SUCCESS");
 		}
 		init(false);
 
@@ -221,7 +221,7 @@ public class EpicWarBot {
 		Log.d(LOG_PREF, "GameConnect");
 		AnswerInfo retResult = new AnswerInfo();
 		if (m_vkConnected == false) {
-			retResult.Set("Not connected!", "", true,
+			retResult.set("Not connected!", "", true,
 					"Vkontakte not connected!");
 			return retResult;
 		}
@@ -241,13 +241,13 @@ public class EpicWarBot {
 
 		ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
 				m_cookieManager, false, false);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			String patternPair = "[,\\s\\n\\r]*\\\\\"([^:^\\\\]*)\\\\\":\\s*[\\\\\"]*(.*?)(\\\\\"|,|$)";
 			HashMap<String, String> paramPairs = FindPairsInText(
-					retDict.responseStr, "var params\\s*=\\s*\\{(.*?)\\}",
+					retDict.getResponseStr(), "var params\\s*=\\s*\\{(.*?)\\}",
 					patternPair);
 			HashMap<String, String> optionPairs = FindPairsInText(
-					retDict.responseStr, "var options\\s*=\\s*\\{(.*?)\\}",
+					retDict.getResponseStr(), "var options\\s*=\\s*\\{(.*?)\\}",
 					patternPair);
 			if (optionPairs.containsKey("src") == true) {
 				String iUrl = optionPairs.get("src");
@@ -264,9 +264,9 @@ public class EpicWarBot {
 				m_sid = (String) cSendData.get("sid");
 				retDict = GetPost(iUrl, "GET", cSendData, cSendHeaders,
 						m_cookieManager, false, false);
-				if (retDict.status == Status.SUCCESS) {
+				if (retDict.getStatus() == Status.SUCCESS) {
 					HashMap<String, String> paramFlash = FindPairsInText(
-							retDict.responseStr,
+							retDict.getResponseStr(),
 							"params.flashvars\\s*=[\\s\\n\\r]*\"(.*?)\"",
 							"(.*?)=(.*?)(&|$)");
 					if (paramFlash.containsKey("auth_key")) {
@@ -298,7 +298,7 @@ public class EpicWarBot {
 
 	private AnswerInfo SendRecvFirstData() {
 		AnswerInfo retResult = new AnswerInfo();
-		retResult.Set("Not connected!", "", true,
+		retResult.set("Not connected!", "", true,
 				"SendRecvFirstData return null data");
 		HashMap<String, Object> formSendData = new HashMap<String, Object>();
 		String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":"
@@ -327,11 +327,11 @@ public class EpicWarBot {
 		String vkphotoUrl = "";
 		String vklastName = "";
 
-		if (retDictForm.status == Status.SUCCESS) {
+		if (retDictForm.getStatus() == Status.SUCCESS) {
 			JSONObject jresponse;
 			try {
 				JSONObject retDictFormJson = new JSONObject(new JSONTokener(
-						retDictForm.responseStr));
+						retDictForm.getResponseStr()));
 				jresponse = retDictFormJson.getJSONObject("response");
 				JSONArray juser = jresponse.getJSONArray("user");
 				if (juser.length() > 0) {
@@ -362,7 +362,7 @@ public class EpicWarBot {
 					appFriendsArray.add(String.valueOf(cjappfriend));
 				}
 			} catch (JSONException e) {
-				retResult.Set("Not connected!", e.toString(), true,
+				retResult.set("Not connected!", e.toString(), true,
 						"SendRecvFirstData parse json error");
 			}
 		}
@@ -434,10 +434,10 @@ public class EpicWarBot {
 		jsonData.put("calls", j_calls);
 
 		ReturnData retDict = SendRecv(jsonData);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			try {
 				JSONObject retDictFormJson = new JSONObject(new JSONTokener(
-						retDict.responseStr));
+						retDict.getResponseStr()));
 				JSONArray jresults = retDictFormJson.getJSONArray("results");
 				for (int i = 0; i < jresults.length(); i++) {
 					JSONObject fbobj = jresults.getJSONObject(i);
@@ -506,10 +506,10 @@ public class EpicWarBot {
 					}
 				}
 				m_gameConnected = true;
-				retResult.Set("Game connected!", "", true, "");
+				retResult.set("Game connected!", "", true, "");
 			} catch (JSONException e) {
-				retResult.Set("Not connected!", e.toString(), true,
-						"retDictFormJson parse error " + retDict.responseStr);
+				retResult.set("Not connected!", e.toString(), true,
+						"retDictFormJson parse error " + retDict.getResponseStr());
 			}
 
 		}
@@ -532,8 +532,8 @@ public class EpicWarBot {
     		jsonData.put("calls", j_calls);
 
     		ReturnData retDict = SendRecv(jsonData);
-    		if (retDict.status == Status.SUCCESS) {
-    			retResult.Set("Cemetery farm ok!", "", false,"");
+    		if (retDict.getStatus() == Status.SUCCESS) {
+    			retResult.set("Cemetery farm ok!", "", false,"");
     		}
         }
         return retResult;
@@ -575,8 +575,8 @@ public class EpicWarBot {
     		jsonData.put("calls", j_calls);
 
     		ReturnData retDict = SendRecv(jsonData);
-    		if (retDict.status == Status.SUCCESS) {
-    			retResult.Set("Gift send ok!", "", false,"");
+    		if (retDict.getStatus() == Status.SUCCESS) {
+    			retResult.set("Gift send ok!", "", false,"");
     		}
         }
         
@@ -601,7 +601,7 @@ public class EpicWarBot {
 		jsonData.put("calls", j_calls);
 
 		ReturnData retDict = SendRecv(jsonData);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			farmed = true;
 		}
 		
@@ -622,11 +622,11 @@ public class EpicWarBot {
         }
         if(allFarmed == true)
         {
-        	retResult.Set("All farmed!", "", false,"");
+        	retResult.set("All farmed!", "", false,"");
         }
         else
         {
-        	retResult.Set("Error farmed!", "", true,"");
+        	retResult.set("Error farmed!", "", true,"");
         }
         
         return retResult;
@@ -646,7 +646,7 @@ public class EpicWarBot {
 		jsonData.put("calls", j_calls);
 
 		ReturnData retDict = SendRecv(jsonData);
-		if (retDict.status == Status.SUCCESS) {
+		if (retDict.getStatus() == Status.SUCCESS) {
 			collected = true;
 		}
 		
@@ -685,11 +685,11 @@ public class EpicWarBot {
         
         if(collected == true)
         {
-        	retResult.Set("All collected!", "", false,"");
+        	retResult.set("All collected!", "", false,"");
         }
         else
         {
-        	retResult.Set("Error collected!", "", true,"");
+        	retResult.set("Error collected!", "", true,"");
         }
         
         return retResult;
@@ -705,8 +705,8 @@ public class EpicWarBot {
 				&& typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
 						"get") != true) {
 			Log.d(LOG_PREF, "Wrong getpost type: " + typePostGet);
-			responseData.errorMsg = "Wrong getpost type: " + typePostGet;
-			responseData.status = Status.ERROR;
+			responseData.setErrorMsg("Wrong getpost type: " + typePostGet);
+			responseData.setStatus(Status.ERROR);
 			return responseData;
 		}
 		String cUrlString = urlString;
@@ -733,8 +733,8 @@ public class EpicWarBot {
 		try {
 			reqURL = new URL(cUrlString);
 		} catch (MalformedURLException e) {
-			responseData.errorMsg = e.toString();
-			responseData.status = Status.ERROR;
+			responseData.setErrorMsg(e.toString());
+			responseData.setStatus(Status.ERROR);
 			return responseData;
 		}
 		HttpURLConnection request;
@@ -745,8 +745,8 @@ public class EpicWarBot {
 				request = (HttpURLConnection) (reqURL.openConnection());
 			}
 		} catch (IOException e) {
-			responseData.errorMsg = e.toString();
-			responseData.status = Status.ERROR;
+			responseData.setErrorMsg(e.toString());
+			responseData.setStatus(Status.ERROR);
 			return responseData;
 		}
 		request.setInstanceFollowRedirects(autoRedirect);
@@ -765,8 +765,8 @@ public class EpicWarBot {
 		try {
 			request.setRequestMethod(typePostGet);
 		} catch (ProtocolException e) {
-			responseData.errorMsg = e.toString();
-			responseData.status = Status.ERROR;
+			responseData.setErrorMsg(e.toString());
+			responseData.setStatus(Status.ERROR);
 			return responseData;
 		}
 
@@ -808,8 +808,8 @@ public class EpicWarBot {
 				writer.flush();
 				writer.close();
 			} catch (IOException e) {
-				responseData.errorMsg = e.toString();
-				responseData.status = Status.ERROR;
+				responseData.setErrorMsg(e.toString());
+				responseData.setStatus(Status.ERROR);
 				return responseData;
 			}
 
@@ -836,8 +836,8 @@ public class EpicWarBot {
 						}
 					}
 				} catch (IOException e) {
-					responseData.errorMsg = e.toString();
-					responseData.status = Status.ERROR;
+					responseData.setErrorMsg(e.toString());
+					responseData.setStatus(Status.ERROR);
 					return responseData;
 				}
 				switch (HttpResult) {
@@ -849,8 +849,8 @@ public class EpicWarBot {
 						baseURL = new URL(currUrl);
 						nextURL = new URL(baseURL, currLocation);
 					} catch (MalformedURLException e) {
-						responseData.errorMsg = e.toString();
-						responseData.status = Status.ERROR;
+						responseData.setErrorMsg(e.toString());
+						responseData.setStatus(Status.ERROR);
 						return responseData;
 					}
 
@@ -864,8 +864,8 @@ public class EpicWarBot {
 									.openConnection();
 						}
 					} catch (IOException e) {
-						responseData.errorMsg = e.toString();
-						responseData.status = Status.ERROR;
+						responseData.setErrorMsg(e.toString());
+						responseData.setStatus(Status.ERROR);
 						return responseData;
 					}
 					request.addRequestProperty(
@@ -925,17 +925,17 @@ public class EpicWarBot {
 								HttpCookie.parse(cookie).get(0));
 					}
 				}
-				responseData.responseStr = sb.toString();
+				responseData.setResponseStr(sb.toString());
 
-				responseData.status = Status.SUCCESS;
+				responseData.setStatus(Status.SUCCESS);
 			} else {
-				responseData.errorMsg = request.getResponseMessage();
-				responseData.status = Status.ERROR;
+				responseData.setErrorMsg(request.getResponseMessage());
+				responseData.setStatus(Status.ERROR);
 				return responseData;
 			}
 		} catch (IOException e) {
-			responseData.errorMsg = e.toString();
-			responseData.status = Status.ERROR;
+			responseData.setErrorMsg(e.toString());
+			responseData.setStatus(Status.ERROR);
 			return responseData;
 		}
 

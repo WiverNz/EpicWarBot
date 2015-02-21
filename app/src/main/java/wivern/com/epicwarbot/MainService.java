@@ -2,6 +2,7 @@ package wivern.com.epicwarbot;
 /**
  * Created by askibin on 12.02.2015.
  */
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -17,34 +18,28 @@ import java.util.TimerTask;
  */
 public class MainService extends Service {
     /**
-     * @since 1.0
-     * tag for log
+     * tag for log.
      */
     private final String mLogTag = "BotService";
     /**
-     * @since 1.0
-     * main timer
+     * main timer.
      */
     private Timer mTimer;
     /**
-     * @since 1.0
-     * main timer task
+     * main timer task.
      */
     private TimerTask mTimerTask;
     /**
-     * @since 1.0
-     * default interval for timer
+     * default interval for timer.
      */
     private final long mDefInterval = 1000;
     /**
-     * @since 1.0
-     * interval for timer
+     * interval for timer.
      */
     private long mInterval = mDefInterval;
 
     /**
-     * @since 1.0
-     * on create service
+     * on create service.
      */
     public final void onCreate() {
         super.onCreate();
@@ -52,29 +47,46 @@ public class MainService extends Service {
         //mTimer = new Timer();
         //schedule();
     }
+
+    /**
+     * constructor.
+     */
     public MainService() {
     }
 
-    public final IBotService.Stub mBinder = new IBotService.Stub() {
-
+    /**
+     * stub to bot interface.
+     */
+    private final IBotService.Stub mBinder = new IBotService.Stub() {
         @Override
         public IBinder asBinder() {
             return null;
         }
 
         @Override
-        public void connect(IBotServiceCallback listener) throws RemoteException {
-            listener.onConnectedResult("test result");
+        public void connect(final IBotServiceCallback listener) {
+            try {
+                listener.onConnectedResult("test result");
+            } catch (RemoteException e) {
+                Log.d(mLogTag, "onConnectedResult exception: " + e.toString());
+            }
         }
 
         @Override
-        public void setVKLoginAndPass(String login, String password) throws RemoteException {
+        public void setVKLoginAndPass(final String login,
+                                      final String password) {
 
         }
     };
 
+    /**
+     * on bind.
+     *
+     * @param intent intent to bind
+     * @return binder
+     */
     @Override
-    public IBinder onBind(Intent intent) {
+    public final IBinder onBind(final Intent intent) {
         return mBinder;
     }
 

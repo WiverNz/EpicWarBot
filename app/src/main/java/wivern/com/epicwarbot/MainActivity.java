@@ -1,6 +1,5 @@
 package wivern.com.epicwarbot;
 
-import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -53,30 +52,6 @@ public class MainActivity extends ActionBarActivity
     }
 
     /**
-     * button connect.
-     */
-    private Button mBtnConnect;
-    /**
-     * button disconnect.
-     */
-    private Button mBtnDisconnect;
-    /**
-     * button start service.
-     */
-    private Button mBtnStartService;
-    /**
-     * button stop service.
-     */
-    private Button mBtnStopService;
-    /**
-     * edit text field for vk login.
-     */
-    private EditText mVkLogin;
-    /**
-     * edit text field for vk password.
-     */
-    private EditText mVkPassword;
-    /**
      * handler for send messages from service callback functions
      * to main activity.
      */
@@ -90,17 +65,9 @@ public class MainActivity extends ActionBarActivity
      */
     private IBotServiceCallback mServiceCallback;
     /**
-     * service connection.
-     */
-    private ServiceConnection mBotServiceConnection;
-    /**
      * intent for service.
      */
     private Intent mIntent;
-    /**
-     * main service object.
-     */
-    private MainService mService;
 
     /**
      * on create activity.
@@ -111,19 +78,42 @@ public class MainActivity extends ActionBarActivity
     protected final void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mBtnConnect = (Button) this.findViewById(R.id.btnConnect);
-        mBtnConnect.setOnClickListener(this);
-        mBtnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
-        mBtnDisconnect.setOnClickListener(this);
-        mBtnStartService = (Button) this.findViewById(R.id.btnStartService);
-        mBtnStartService.setOnClickListener(this);
-        mBtnStopService = (Button) this.findViewById(R.id.btnStopService);
-        mBtnStopService.setOnClickListener(this);
-        mVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
-        mVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
-        mVkLogin.setText("13602098361");
-        mVkPassword.setText("");
+        /**
+         * button connect.
+         */
+        Button btnConnect;
+        /**
+         * button disconnect.
+         */
+        Button btnDisconnect;
+        /**
+         * button start service.
+         */
+        Button btnStartService;
+        /**
+         * button stop service.
+         */
+        Button btnStopService;
+        /**
+         * edit text field for vk login.
+         */
+        EditText vkLogin;
+        /**
+         * edit text field for vk password.
+         */
+        EditText vkPassword;
+        btnConnect = (Button) this.findViewById(R.id.btnConnect);
+        btnConnect.setOnClickListener(this);
+        btnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
+        btnDisconnect.setOnClickListener(this);
+        btnStartService = (Button) this.findViewById(R.id.btnStartService);
+        btnStartService.setOnClickListener(this);
+        btnStopService = (Button) this.findViewById(R.id.btnStopService);
+        btnStopService.setOnClickListener(this);
+        vkLogin = (EditText) this.findViewById(R.id.etVkLogin);
+        vkPassword = (EditText) this.findViewById(R.id.etVkPassword);
+        vkLogin.setText("13602098361");
+        vkPassword.setText("");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
         mIntent.setAction("service.EpicWarBot");
@@ -136,15 +126,22 @@ public class MainActivity extends ActionBarActivity
      * @return is bound (boolean)
      */
     protected final boolean connectToService() {
-        mBotServiceConnection = new ServiceConnection() {
+        /**
+         * service connection.
+         */
+        ServiceConnection botServiceConnection;
+        botServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(final ComponentName name,
                                            final IBinder service) {
                 mServiceApi = IBotService.Stub.asInterface(service);
                 mServiceCallback = new IBotServiceCallback.Stub() {
+                    /**
+                     * callback for connection result.
+                     * @param result string with result
+                     */
                     @Override
-                    public void onConnectedResult(final String result)
-                            throws RemoteException {
+                    public void onConnectedResult(final String result) {
                         Message msg = new Message();
                         msg.what = 1;
                         Bundle sendData = new Bundle();
@@ -167,7 +164,7 @@ public class MainActivity extends ActionBarActivity
         };
         if (mBound) {
             // binding to remote service
-            bindService(mIntent, mBotServiceConnection,
+            bindService(mIntent, botServiceConnection,
                     Service.BIND_AUTO_CREATE);
         }
 
@@ -177,7 +174,7 @@ public class MainActivity extends ActionBarActivity
     /**
      * on create options menu.
      *
-     * @param menu
+     * @param menu menu
      * @return true
      */
     @Override
@@ -242,12 +239,12 @@ public class MainActivity extends ActionBarActivity
                 break;
         }
     }
+
     /**
      * @since 1.0
      * handler class
      */
-    @SuppressLint("HandlerLeak")
-    public class MHandler extends Handler {
+    public static class MHandler extends Handler {
         /**
          * link to main activity.
          */
@@ -277,7 +274,7 @@ public class MainActivity extends ActionBarActivity
                         Bundle sendData = msg.getData();
                         if (sendData != null) {
                             String result = sendData.getString("result");
-                            Toast.makeText(getApplicationContext(),
+                            Toast.makeText(mActivity.getApplicationContext(),
                                     result, Toast.LENGTH_SHORT).show();
                         }
                         // LooperThread.MSG_ID_CONNECT
