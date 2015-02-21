@@ -20,7 +20,7 @@ public class MainService extends Service {
     /**
      * tag for log.
      */
-    private final String mLogTag = "BotService";
+    private static final String LOG_TAG = "BotService";
     /**
      * main timer.
      */
@@ -43,7 +43,7 @@ public class MainService extends Service {
      */
     public final void onCreate() {
         super.onCreate();
-        Log.d(mLogTag, "MainService onCreate");
+        Log.d(LOG_TAG, "MainService onCreate");
         //mTimer = new Timer();
         //schedule();
     }
@@ -68,7 +68,7 @@ public class MainService extends Service {
             try {
                 listener.onConnectedResult("test result");
             } catch (RemoteException e) {
-                Log.d(mLogTag, "onConnectedResult exception: " + e.toString());
+                Log.d(LOG_TAG, "onConnectedResult exception: " + e.toString());
             }
         }
 
@@ -101,7 +101,7 @@ public class MainService extends Service {
 //        if (mInterval > 0) {
 //            mTimerTask = new TimerTask() {
 //                public void run() {
-//                    Log.d(mLogTag, "run");
+//                    Log.d(LOG_TAG, "run");
 //                }
 //            };
 //            mTimer.schedule(mTimerTask, mDefInterval, mInterval);

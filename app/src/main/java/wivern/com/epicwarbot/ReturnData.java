@@ -1,3 +1,4 @@
+
 package wivern.com.epicwarbot;
 
 import wivern.com.epicwarbot.EpicWarBot.Status;
@@ -81,7 +82,7 @@ public class ReturnData {
      */
     ReturnData() {
         errorMsg = "";
-        status = Status.NOTINIT;
+        status = Status.NOT_INIT;
         responseStr = "";
     }
 }

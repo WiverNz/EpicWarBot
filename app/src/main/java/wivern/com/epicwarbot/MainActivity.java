@@ -1,5 +1,6 @@
 package wivern.com.epicwarbot;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -9,7 +10,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
-import android.support.v7.app.ActionBarActivity;
+//import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,12 +23,12 @@ import android.widget.Toast;
  * @since 1.0
  * Main activity class
  */
-public class MainActivity extends ActionBarActivity
+public class MainActivity extends Activity
         implements View.OnClickListener {
     /**
      * log tag.
      */
-    private final String mLogTag = "BotMainActivity";
+    private static final String LOG_TAG = "BotMainActivity";
     /**
      * is bound captured.
      */
@@ -151,7 +152,7 @@ public class MainActivity extends ActionBarActivity
                     }
                 };
                 mBound = true;
-                Log.d(mLogTag, "Service connected");
+                Log.d(LOG_TAG, "Service connected");
             }
 
             @Override
@@ -159,7 +160,7 @@ public class MainActivity extends ActionBarActivity
                 mServiceApi = null;
                 mServiceCallback = null;
                 mBound = false;
-                Log.d(mLogTag, "Service disconnected");
+                Log.d(LOG_TAG, "Service disconnected");
             }
         };
         if (mBound) {
