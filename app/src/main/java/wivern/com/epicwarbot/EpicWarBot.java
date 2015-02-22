@@ -295,6 +295,20 @@ public class EpicWarBot {
     private static Proxy mProxy;
 
     /**
+     * use auto redirect.
+     */
+    private static boolean mAutoRedirect;
+
+    /**
+     * connection timeout.
+     */
+    private static int mConnectTimeout;
+    /**
+     * read timeout.
+     */
+    private static int mReadTimeout;
+
+    /**
      * default constructor.
      */
     EpicWarBot() {
@@ -307,6 +321,8 @@ public class EpicWarBot {
      * @param constructor if true - create values
      */
     private void init(final boolean constructor) {
+        final int defaultConnectTimeout = 1000;
+        final int defaultReadTimeout = 15000;
         mVkId = "";
         mRequestId = 1;
         mAuthKey = "";
@@ -317,14 +333,17 @@ public class EpicWarBot {
         mVkConnected = false;
         mGameConnected = false;
         mProxy = null;
+        mAutoRedirect = false;
+        mConnectTimeout = defaultConnectTimeout;
+        mReadTimeout = defaultReadTimeout;
         if (constructor) {
-            mSessionHeaderX = new HashMap<String, String>();
-            mArrayGoldMine = new ArrayList<Integer>();
-            mArrayMillMine = new ArrayList<Integer>();
-            mArraySandMine = new ArrayList<Integer>();
-            mFriendGifts = new ArrayList<GiftInfo>();
-            mFriendSendGifts = new ArrayList<String>();
-            mFriendAlreadySendGifts = new ArrayList<String>();
+            mSessionHeaderX = new HashMap<>();
+            mArrayGoldMine = new ArrayList<>();
+            mArrayMillMine = new ArrayList<>();
+            mArraySandMine = new ArrayList<>();
+            mFriendGifts = new ArrayList<>();
+            mFriendSendGifts = new ArrayList<>();
+            mFriendAlreadySendGifts = new ArrayList<>();
             mCookieManager = new java.net.CookieManager();
         } else {
             mSessionHeaderX.clear();
@@ -370,7 +389,7 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin + " " + vkPassword);
         final String urlPath = "http://login.vk.com/";
-        HashMap<String, Object> cSendData = new HashMap<String, Object>();
+        HashMap<String, Object> cSendData = new HashMap<>();
 
         cSendData.put("email", vkLogin);
         cSendData.put("pass", vkPassword);
@@ -385,7 +404,7 @@ public class EpicWarBot {
                     "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
             if (vkPairs.containsKey("id")) {
                 mVkId = vkPairs.get("id");
-                if (mVkId != "0") {
+                if (!mVkId.equals("0")) {
                     mVkConnected = true;
                     retResult.set("Connected!", retDict.getStatus().toString(),
                             false, "");
@@ -416,7 +435,7 @@ public class EpicWarBot {
         AnswerInfo retResult = new AnswerInfo();
         init(false);
         final String urlPath = "http://vk.com/login.php";
-        HashMap<String, Object> cSendData = new HashMap<String, Object>();
+        HashMap<String, Object> cSendData = new HashMap<>();
 
         cSendData.put("op", "logout");
 
@@ -454,8 +473,8 @@ public class EpicWarBot {
         }
 
         String urlPath = "http://vk.com/al_profile.php";
-        HashMap<String, Object> cSendData = new HashMap<String, Object>();
-        HashMap<String, String> cSendHeaders = new HashMap<String, String>();
+        HashMap<String, Object> cSendData = new HashMap<>();
+        HashMap<String, String> cSendHeaders = new HashMap<>();
 
         cSendData.put("__query", "clashofthrones");
         cSendData.put("_ref", "apps");
@@ -484,7 +503,7 @@ public class EpicWarBot {
                 for (Entry<String, String> cItem : paramPairs.entrySet()) {
                     String cKey = cItem.getKey();
                     String cVal = cItem.getValue();
-                    if (cKey == "api_url") {
+                    if (cKey.equals("api_url")) {
                         cVal = cVal.replace("\\\\\\", "");
                     }
                     cSendData.put(cKey, cVal);
@@ -528,13 +547,17 @@ public class EpicWarBot {
      * get information about vk id (user name, last name, photo url).
      * and information about friends
      *
+     * @param friendsArray    friends list
+     * @param appFriendsArray application friends list
      * @return map with information
      */
-    private HashMap<String, Object> getApiVkAboutUsers() {
+    private HashMap<String, Object> getApiVkAboutUsers(
+            final List<String> friendsArray,
+            final List<String> appFriendsArray) {
         String errorMessage = "";
-        HashMap<String, Object> retApiUsers = new HashMap<String, Object>();
+        HashMap<String, Object> retApiUsers = new HashMap<>();
 
-        HashMap<String, Object> formSendData = new HashMap<String, Object>();
+        HashMap<String, Object> formSendData = new HashMap<>();
         String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":"
                 + mVkId
                 + ",\"fields\":\"can_post,uid,first_name,"
@@ -563,47 +586,45 @@ public class EpicWarBot {
         ReturnData retDictForm = getPost(cSite, "POST", formSendData, null,
                 mCookieManager, false, true);
 
-        List<String> friendsArray = new ArrayList<String>();
-        List<String> appFriendsArray = new ArrayList<String>();
-        String vkbirthday = "";
-        int vkcity = 0;
-        String vkfirstName = "";
-        String vkphotoUrl = "";
-        String vklastName = "";
+        String vkBirthday = "";
+        int vkCity = 0;
+        String vkFirstName = "";
+        String vkPhotoUrl = "";
+        String vkLastName = "";
 
         if (retDictForm.getStatus() == Status.SUCCESS) {
-            JSONObject jresponse;
+            JSONObject jResponse;
             try {
                 JSONObject retDictFormJson = new JSONObject(new JSONTokener(
                         retDictForm.getResponseStr()));
-                jresponse = retDictFormJson.getJSONObject("response");
-                JSONArray juser = jresponse.getJSONArray("user");
-                if (juser.length() > 0) {
-                    JSONObject userData = new JSONObject();
-                    userData = juser.getJSONObject(0);
+                jResponse = retDictFormJson.getJSONObject("response");
+                JSONArray jUser = jResponse.getJSONArray("user");
+                if (jUser.length() > 0) {
+                    JSONObject userData;
+                    userData = jUser.getJSONObject(0);
                     try {
-                        vkfirstName = userData.getString("first_name");
-                        vklastName = userData.getString("last_name");
-                        vkphotoUrl = userData.getString("photo_medium");
-                        vkbirthday = userData.getString("bdate");
-                        vkbirthday = changeDateFormat(vkbirthday, "dd.M.yyyy",
+                        vkFirstName = userData.getString("first_name");
+                        vkLastName = userData.getString("last_name");
+                        vkPhotoUrl = userData.getString("photo_medium");
+                        vkBirthday = userData.getString("bdate");
+                        vkBirthday = changeDateFormat(vkBirthday, "dd.M.yyyy",
                                 "yyyy-M-dd");
-                        vkcity = userData.getInt("city");
+                        vkCity = userData.getInt("city");
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
-                JSONArray jfriends = jresponse.getJSONArray("friends");
-                for (int i = 0; i < jfriends.length(); i++) {
-                    JSONObject cjfriendI = jfriends.getJSONObject(i);
-                    long cjfriendid = cjfriendI.getLong("uid");
-                    friendsArray.add(String.valueOf(cjfriendid));
+                JSONArray jFriends = jResponse.getJSONArray("friends");
+                for (int i = 0; i < jFriends.length(); i++) {
+                    JSONObject cjFriendI = jFriends.getJSONObject(i);
+                    long cjFriendId = cjFriendI.getLong("uid");
+                    friendsArray.add(String.valueOf(cjFriendId));
                 }
-                JSONArray jappfriends = jresponse.getJSONArray("appFriends");
-                for (int i = 0; i < jappfriends.length(); i++) {
-                    long cjappfriend = (Long) jappfriends.get(i);
+                JSONArray jAppFriends = jResponse.getJSONArray("appFriends");
+                for (int i = 0; i < jAppFriends.length(); i++) {
+                    long cjAppFriend = (Long) jAppFriends.get(i);
 
-                    appFriendsArray.add(String.valueOf(cjappfriend));
+                    appFriendsArray.add(String.valueOf(cjAppFriend));
                 }
             } catch (JSONException e) {
                 errorMessage = "Not connected!" + e.toString()
@@ -612,11 +633,11 @@ public class EpicWarBot {
         }
         retApiUsers.put("friendsArray", friendsArray);
         retApiUsers.put("appFriendsArray", appFriendsArray);
-        retApiUsers.put("vkbirthday", vkbirthday);
-        retApiUsers.put("vkcity", vkcity);
-        retApiUsers.put("vkfirstName", vkfirstName);
-        retApiUsers.put("vkphotoUrl", vkphotoUrl);
-        retApiUsers.put("vklastName", vklastName);
+        retApiUsers.put("vkbirthday", vkBirthday);
+        retApiUsers.put("vkcity", vkCity);
+        retApiUsers.put("vkfirstName", vkFirstName);
+        retApiUsers.put("vkphotoUrl", vkPhotoUrl);
+        retApiUsers.put("vklastName", vkLastName);
         retApiUsers.put("errorMessage", errorMessage);
 
         return retApiUsers;
@@ -630,50 +651,49 @@ public class EpicWarBot {
     private ReturnData sendFirstData() {
         ReturnData retDict = new ReturnData();
 
-        List<String> friendsArray = new ArrayList<String>();
-        List<String> appFriendsArray = new ArrayList<String>();
+        List<String> friendsArray = new ArrayList<>();
+        List<String> appFriendsArray = new ArrayList<>();
 
-        HashMap<String, Object> retApiUsers = getApiVkAboutUsers();
-        String vkbirthday = retApiUsers.get("vkbirthday").toString();
-        int vkcity = (int) retApiUsers.get("vkcity");
-        String vkfirstName = retApiUsers.get("vkfirstName").toString();
-        String vkphotoUrl = retApiUsers.get("vkphotoUrl").toString();
-        String vklastName = retApiUsers.get("vklastName").toString();
+        HashMap<String, Object> retApiUsers = getApiVkAboutUsers(friendsArray,
+                appFriendsArray);
+        String vkBirthday = retApiUsers.get("vkbirthday").toString();
+        int vkCity = (int) retApiUsers.get("vkcity");
+        String vkFirstName = retApiUsers.get("vkfirstName").toString();
+        String vkPhotoUrl = retApiUsers.get("vkphotoUrl").toString();
+        String vkLastName = retApiUsers.get("vklastName").toString();
         String errorMessage = retApiUsers.get("errorMessage").toString();
-        friendsArray = (List<String>) retApiUsers.get("friendsArray");
-        appFriendsArray = (List<String>) retApiUsers.get("appFriendsArray");
 
-        if (vkfirstName == "") {
+        if (vkFirstName.equals("")) {
             retDict.setErrorMsg(errorMessage);
             return retDict;
         }
-        HashMap<String, Object> jReferrer = new HashMap<String, Object>();
+        HashMap<String, Object> jReferrer = new HashMap<>();
         jReferrer.put("type", toJsonString("user_apps"));
         jReferrer.put("id", 0);
-        HashMap<String, Object> jUser = new HashMap<String, Object>();
+        HashMap<String, Object> jUser = new HashMap<>();
         jUser.put("country", toJsonString("function Function() []"));
-        jUser.put("birthday", toJsonString(vkbirthday));
+        jUser.put("birthday", toJsonString(vkBirthday));
         jUser.put("sex", toJsonString("male"));
         jUser.put("locale", toJsonString("en"));
         jUser.put("id", toJsonString(mVkId));
-        jUser.put("city", vkcity);
-        jUser.put("firstName", toJsonString(vkfirstName));
-        jUser.put("photoUrl", toJsonString(vkphotoUrl));
-        jUser.put("lastName", toJsonString(vklastName));
+        jUser.put("city", vkCity);
+        jUser.put("firstName", toJsonString(vkFirstName));
+        jUser.put("photoUrl", toJsonString(vkPhotoUrl));
+        jUser.put("lastName", toJsonString(vkLastName));
         jUser.put("referrer", jReferrer);
         HashMap<String, Object> jArgsRegistration =
-                new HashMap<String, Object>();
+                new HashMap<>();
         jArgsRegistration.put("friendIds", friendsArray);
         jArgsRegistration.put("user", jUser);
-        HashMap<String, Object> jArgscheckRegisteredUsers =
-                new HashMap<String, Object>();
-        jArgscheckRegisteredUsers.put("users", appFriendsArray);
-        HashMap<String, Object> jArgsinvitationGetUsers =
-                new HashMap<String, Object>();
-        jArgsinvitationGetUsers.put("ids", friendsArray);
+        HashMap<String, Object> jArgsCheckRegisteredUsers =
+                new HashMap<>();
+        jArgsCheckRegisteredUsers.put("users", appFriendsArray);
+        HashMap<String, Object> jArgsInvitationGetUsers =
+                new HashMap<>();
+        jArgsInvitationGetUsers.put("ids", friendsArray);
         HashMap<String, Object> jArgsEmpty =
-                new HashMap<String, Object>();
-        List<Object> jCalls = new ArrayList<Object>();
+                new HashMap<>();
+        List<Object> jCalls = new ArrayList<>();
         jCalls.add(genCall("registration", jArgsRegistration, null));
         jCalls.add(genCall("boostGetAll", jArgsEmpty, null));
         jCalls.add(genCall("artefactGetList", jArgsEmpty, null));
@@ -704,13 +724,13 @@ public class EpicWarBot {
         jCalls.add(genCall("battleGetActive", jArgsEmpty, null));
         jCalls.add(genCall("spellList", jArgsEmpty, null));
         jCalls.add(genCall("spellProductionQueue", jArgsEmpty, null));
-        jCalls.add(genCall("checkRegisteredUsers", jArgscheckRegisteredUsers,
+        jCalls.add(genCall("checkRegisteredUsers", jArgsCheckRegisteredUsers,
                 null));
-        jCalls.add(genCall("invitationGetUsers", jArgsinvitationGetUsers,
+        jCalls.add(genCall("invitationGetUsers", jArgsInvitationGetUsers,
                 null));
         jCalls.add(genCall("state", jArgsEmpty, null));
 
-        HashMap<String, Object> jsonData = new HashMap<String, Object>();
+        HashMap<String, Object> jsonData = new HashMap<>();
         jsonData.put("sesion", null);
         jsonData.put("calls", jCalls);
 
@@ -731,15 +751,15 @@ public class EpicWarBot {
             try {
                 JSONObject retDictFormJson = new JSONObject(new JSONTokener(
                         retDict.getResponseStr()));
-                JSONArray jresults = retDictFormJson.getJSONArray("results");
-                for (int i = 0; i < jresults.length(); i++) {
-                    JSONObject fbobj = jresults.getJSONObject(i);
-                    String fcident = fbobj.getString("ident");
-                    if (fcident.contentEquals("giftGetAvailable")) {
-                        JSONObject fgiftRes = fbobj.getJSONObject("result");
-                        JSONArray fgiftArr = fgiftRes.getJSONArray("gift");
-                        for (int j = 0; j < fgiftArr.length(); j++) {
-                            JSONObject cGiftInfo = fgiftArr.getJSONObject(j);
+                JSONArray jResults = retDictFormJson.getJSONArray("results");
+                for (int i = 0; i < jResults.length(); i++) {
+                    JSONObject fbObj = jResults.getJSONObject(i);
+                    String fIdentify = fbObj.getString("ident");
+                    if (fIdentify.contentEquals("giftGetAvailable")) {
+                        JSONObject fGiftRes = fbObj.getJSONObject("result");
+                        JSONArray fGiftArr = fGiftRes.getJSONArray("gift");
+                        for (int j = 0; j < fGiftArr.length(); j++) {
+                            JSONObject cGiftInfo = fGiftArr.getJSONObject(j);
                             String cGiftIDS = cGiftInfo.getString("id");
                             JSONObject cGiftBody = cGiftInfo
                                     .getJSONObject("body");
@@ -747,24 +767,24 @@ public class EpicWarBot {
                                     .getJSONObject("userInfo");
                             String cGiftUserId = cGiftUserInfo.getString("id");
                             List<String> cArrayUserIds =
-                                    new ArrayList<String>();
+                                    new ArrayList<>();
                             cArrayUserIds.add(cGiftIDS);
                             GiftInfo gi = new GiftInfo(cGiftUserId,
                                     cArrayUserIds);
                             mFriendGifts.add(gi);
                         }
-                    } else if (fcident.contentEquals("getBuildings")) {
-                        JSONObject fbuildRes = fbobj.getJSONObject("result");
-                        JSONArray fbuildArray = fbuildRes
+                    } else if (fIdentify.contentEquals("getBuildings")) {
+                        JSONObject fBuildRes = fbObj.getJSONObject("result");
+                        JSONArray fBuildArray = fBuildRes
                                 .getJSONArray("building");
-                        for (int j = 0; j < fbuildArray.length(); j++) {
-                            JSONObject fcBuildInfo = fbuildArray
+                        for (int j = 0; j < fBuildArray.length(); j++) {
+                            JSONObject fcBuildInfo = fBuildArray
                                     .getJSONObject(j);
                             int cTypeOfBuild = fcBuildInfo.getInt("typeId");
                             int cIdOfBuild = fcBuildInfo.getInt("id");
-                            boolean cCompl =
+                            boolean cCompleted =
                                     fcBuildInfo.getBoolean("completed");
-                            if (cCompl) {
+                            if (cCompleted) {
                                 if (cTypeOfBuild == MILL_ID) {
                                     mArrayMillMine.add(cIdOfBuild);
                                 } else if (cTypeOfBuild == MINE_ID) {
@@ -774,28 +794,29 @@ public class EpicWarBot {
                                 }
                             }
                         }
-                    } else if (fcident.contentEquals("checkRegisteredUsers")) {
-                        JSONObject fusersRes = fbobj.getJSONObject("result");
-                        JSONArray fusersArray = fusersRes
+                    } else if (fIdentify.
+                            contentEquals("checkRegisteredUsers")) {
+                        JSONObject fUsersRes = fbObj.getJSONObject("result");
+                        JSONArray fUsersArray = fUsersRes
                                 .getJSONArray("result");
-                        for (int j = 0; j < fusersArray.length(); j++) {
-                            String cUser = fusersArray.getString(j);
+                        for (int j = 0; j < fUsersArray.length(); j++) {
+                            String cUser = fUsersArray.getString(j);
                             mFriendSendGifts.add(cUser);
                         }
-                    } else if (fcident.contentEquals("giftGetReceivers")) {
-                        JSONObject fusersRes = fbobj.getJSONObject("result");
-                        JSONArray fusersArray = fusersRes
+                    } else if (fIdentify.contentEquals("giftGetReceivers")) {
+                        JSONObject fUsersRes = fbObj.getJSONObject("result");
+                        JSONArray fUsersArray = fUsersRes
                                 .getJSONArray("receivers");
-                        for (int j = 0; j < fusersArray.length(); j++) {
-                            JSONObject cUserObj = fusersArray.getJSONObject(j);
+                        for (int j = 0; j < fUsersArray.length(); j++) {
+                            JSONObject cUserObj = fUsersArray.getJSONObject(j);
                             String cUserId = cUserObj.getString("toUserId");
                             mFriendAlreadySendGifts.add(cUserId);
                         }
-                    } else if (fcident.contentEquals("cemeteryGet")) {
-                        JSONObject fcemeteryRes = fbobj.getJSONObject("result");
-                        JSONArray fcemeteryArray = fcemeteryRes
+                    } else if (fIdentify.contentEquals("cemeteryGet")) {
+                        JSONObject fCemeteryRes = fbObj.getJSONObject("result");
+                        JSONArray fCemeteryArray = fCemeteryRes
                                 .getJSONArray("result");
-                        if (fcemeteryArray.length() > 0) {
+                        if (fCemeteryArray.length() > 0) {
                             mCemetery = true;
                         }
                     }
@@ -826,11 +847,11 @@ public class EpicWarBot {
         AnswerInfo retResult = new AnswerInfo();
 
         if (mCemetery) {
-            HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
-            List<Object> jCalls = new ArrayList<Object>();
+            HashMap<String, Object> jArgsEmpty = new HashMap<>();
+            List<Object> jCalls = new ArrayList<>();
             jCalls.add(genCall("group_0_body", jArgsEmpty, "cemeteryFarm"));
             jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
-            HashMap<String, Object> jsonData = new HashMap<String, Object>();
+            HashMap<String, Object> jsonData = new HashMap<>();
             jsonData.put("sesion", null);
             jsonData.put("calls", jCalls);
 
@@ -851,7 +872,7 @@ public class EpicWarBot {
      */
     public final AnswerInfo giftSend() {
         AnswerInfo retResult = new AnswerInfo();
-        List<String> friendNeedSendGifts = new ArrayList<String>();
+        List<String> friendNeedSendGifts = new ArrayList<>();
         for (String cUserSend : mFriendSendGifts) {
             boolean needSend = true;
             for (String cUserAlreadySend : mFriendAlreadySendGifts) {
@@ -865,18 +886,17 @@ public class EpicWarBot {
             }
         }
         if (friendNeedSendGifts.size() > 0) {
-            HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
-            HashMap<String, Object> jArgsUsers = new HashMap<String, Object>();
+            HashMap<String, Object> jArgsEmpty = new HashMap<>();
+            HashMap<String, Object> jArgsUsers = new HashMap<>();
             jArgsUsers.put("users", friendNeedSendGifts);
-            HashMap<String, Object> jArgsUsersEmpty =
-                    new HashMap<String, Object>();
-            jArgsUsersEmpty.put("users", new ArrayList<Object>());
-            List<Object> jCalls = new ArrayList<Object>();
+            HashMap<String, Object> jArgsUsersEmpty = new HashMap<>();
+            jArgsUsersEmpty.put("users", new ArrayList<>());
+            List<Object> jCalls = new ArrayList<>();
             jCalls.add(genCall("group_0_body", jArgsUsers, "giftSend"));
             jCalls.add(genCall("group_1_body", jArgsUsersEmpty,
                     "getUsersInfo"));
             jCalls.add(genCall("group_2_body", jArgsEmpty, "state"));
-            HashMap<String, Object> jsonData = new HashMap<String, Object>();
+            HashMap<String, Object> jsonData = new HashMap<>();
             jsonData.put("sesion", null);
             jsonData.put("calls", jCalls);
 
@@ -897,17 +917,17 @@ public class EpicWarBot {
      */
     public final boolean giftFarm(final GiftInfo giftInfo) {
         boolean farmed = false;
-        HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
-        HashMap<String, Object> jArgsuserId = new HashMap<String, Object>();
-        jArgsuserId.put("userId", giftInfo.getUserId());
-        HashMap<String, Object> jArgsids = new HashMap<String, Object>();
-        jArgsids.put("ids", giftInfo.getIdsArr());
-        List<Object> jCalls = new ArrayList<Object>();
-        jCalls.add(genCall("group_0_body", jArgsuserId, "giftFarm"));
-        jCalls.add(genCall("group_1_body", jArgsids, "removeNotices"));
+        HashMap<String, Object> jArgsEmpty = new HashMap<>();
+        HashMap<String, Object> jArgsUserId = new HashMap<>();
+        jArgsUserId.put("userId", giftInfo.getUserId());
+        HashMap<String, Object> jArgsIds = new HashMap<>();
+        jArgsIds.put("ids", giftInfo.getIdsArr());
+        List<Object> jCalls = new ArrayList<>();
+        jCalls.add(genCall("group_0_body", jArgsUserId, "giftFarm"));
+        jCalls.add(genCall("group_1_body", jArgsIds, "removeNotices"));
         jCalls.add(genCall("group_2_body", jArgsEmpty, "giftGetAvailable"));
         jCalls.add(genCall("group_3_body", jArgsEmpty, "state"));
-        HashMap<String, Object> jsonData = new HashMap<String, Object>();
+        HashMap<String, Object> jsonData = new HashMap<>();
         jsonData.put("sesion", null);
         jsonData.put("calls", jCalls);
 
@@ -950,13 +970,13 @@ public class EpicWarBot {
      */
     public final boolean collectResourceFromBuilding(final int id) {
         boolean collected = false;
-        HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
-        HashMap<String, Object> jArgsbuildingId = new HashMap<String, Object>();
-        jArgsbuildingId.put("buildingId", id);
-        List<Object> jCalls = new ArrayList<Object>();
-        jCalls.add(genCall("group_0_body", jArgsbuildingId, "collectResource"));
+        HashMap<String, Object> jArgsEmpty = new HashMap<>();
+        HashMap<String, Object> jArgsBuildingId = new HashMap<>();
+        jArgsBuildingId.put("buildingId", id);
+        List<Object> jCalls = new ArrayList<>();
+        jCalls.add(genCall("group_0_body", jArgsBuildingId, "collectResource"));
         jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
-        HashMap<String, Object> jsonData = new HashMap<String, Object>();
+        HashMap<String, Object> jsonData = new HashMap<>();
         jsonData.put("sesion", null);
         jsonData.put("calls", jCalls);
 
@@ -1017,21 +1037,20 @@ public class EpicWarBot {
      * @param flForm        is form
      * @return return data structure
      */
-    public static final ReturnData getPost(final String urlString,
-                                           final String typePostGet,
-                                           final HashMap<String, Object> inData,
-                                           final HashMap<String, String> header,
-                                           final CookieManager cookieManager,
-                                           final boolean flJSON,
-                                           final boolean flForm) {
-        boolean autoRedirect = false;
+    public static ReturnData getPost(final String urlString,
+                                     final String typePostGet,
+                                     final HashMap<String, Object> inData,
+                                     final HashMap<String, String> header,
+                                     final CookieManager cookieManager,
+                                     final boolean flJSON,
+                                     final boolean flForm) {
 
         ReturnData responseData = new ReturnData();
         if (!typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post")
                 && !typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
                 "get")) {
-            Log.d(LOG_TAG, "Wrong getpost type: " + typePostGet);
-            responseData.setErrorMsg("Wrong getpost type: " + typePostGet);
+            Log.d(LOG_TAG, "Wrong getPost type: " + typePostGet);
+            responseData.setErrorMsg("Wrong getPost type: " + typePostGet);
             responseData.setStatus(Status.ERROR);
             return responseData;
         }
@@ -1040,14 +1059,14 @@ public class EpicWarBot {
 
         if (!flJSON) {
             for (Entry<String, Object> cVal : inData.entrySet()) {
-                if (postString != "") {
+                if (!postString.equals("")) {
                     postString += "&";
                 }
                 postString += cVal.getKey() + "=" + cVal.getValue().toString();
             }
             if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
                     "get")
-                    && postString != "") {
+                    && !postString.equals("")) {
                 cUrlString += "?" + postString;
             }
         } else {
@@ -1055,7 +1074,7 @@ public class EpicWarBot {
             postString = json.toString();
         }
 
-        URL reqURL = null;
+        URL reqURL;
         try {
             reqURL = new URL(cUrlString);
         } catch (MalformedURLException e) {
@@ -1076,7 +1095,7 @@ public class EpicWarBot {
             return responseData;
         }
         try {
-            request.setInstanceFollowRedirects(autoRedirect);
+            request.setInstanceFollowRedirects(mAutoRedirect);
             setUrlConnection(request,
                     postString,
                     typePostGet,
@@ -1094,7 +1113,7 @@ public class EpicWarBot {
                 .contentEquals("post")) {
 
             try {
-                OutputStreamWriter writer = null;
+                OutputStreamWriter writer;
                 request.connect();
                 writer = new OutputStreamWriter(request.getOutputStream());
                 writer.write(postString);
@@ -1108,7 +1127,7 @@ public class EpicWarBot {
 
         }
 
-        if (!autoRedirect) {
+        if (!mAutoRedirect) {
             try {
                 request = aRedirect(
                         urlString, cookieManager,
@@ -1124,7 +1143,7 @@ public class EpicWarBot {
             StringBuilder sb = new StringBuilder();
             int httpResult = request.getResponseCode();
             if (httpResult == HttpURLConnection.HTTP_OK) {
-                InputStreamReader inStream = null;
+                InputStreamReader inStream;
                 String contentEncoding = request.getContentEncoding();
                 if (contentEncoding != null
                         && contentEncoding.toLowerCase(Locale.getDefault())
@@ -1137,9 +1156,10 @@ public class EpicWarBot {
                 }
 
                 BufferedReader br = new BufferedReader(inStream);
-                String line = null;
+                String line;
                 while ((line = br.readLine()) != null) {
-                    sb.append(line + "\n");
+                    sb.append(line);
+                    sb.append("\n");
                 }
                 br.close();
                 Map<String, List<String>> headerFields = request
@@ -1189,8 +1209,7 @@ public class EpicWarBot {
                                          final boolean flForm,
                                          final CookieManager cm)
             throws ProtocolException {
-        final int connectTimeout = 1000;
-        final int readTimeout = 15000;
+
 
         // Log.d(LOG_TAG, "Using proxy: " + request.usingProxy());
         request.setDoOutput(true);
@@ -1198,9 +1217,9 @@ public class EpicWarBot {
                 .contentEquals("post")) {
             request.setDoInput(true);
         }
-        request.setConnectTimeout(connectTimeout);
-        request.setReadTimeout(readTimeout);
-        if (typePostGet.toLowerCase(Locale.getDefault()) == "post") {
+        request.setConnectTimeout(mConnectTimeout);
+        request.setReadTimeout(mReadTimeout);
+        if (typePostGet.toLowerCase(Locale.getDefault()).equals("post")) {
             request.addRequestProperty("Content-Length",
                     Integer.toString(postString.length()));
         }
@@ -1328,27 +1347,6 @@ public class EpicWarBot {
     }
 
     /**
-     * check status on redirect.
-     *
-     * @param retStatusCode status
-     * @return true - it's a redirect
-     */
-    private static boolean itIsARedirect(final int retStatusCode) {
-        boolean redirect = false;
-
-        int status = retStatusCode;
-        if (status != HttpURLConnection.HTTP_OK) {
-            if (status == HttpURLConnection.HTTP_MOVED_TEMP
-                    || status == HttpURLConnection.HTTP_MOVED_PERM
-                    || status == HttpURLConnection.HTTP_SEE_OTHER) {
-                redirect = true;
-            }
-        }
-
-        return redirect;
-    }
-
-    /**
      * get pairs from http response.
      *
      * @param inputText       http response text
@@ -1359,7 +1357,7 @@ public class EpicWarBot {
     public static HashMap<String, String> findPairsInText(
             final String inputText,
             final String patternBlockStr, final String patternPairStr) {
-        HashMap<String, String> retPairs = new HashMap<String, String>();
+        HashMap<String, String> retPairs = new HashMap<>();
         final Pattern patternBlock = Pattern.compile(patternBlockStr,
                 Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         final Pattern patternPair = Pattern.compile(patternPairStr,
@@ -1389,7 +1387,7 @@ public class EpicWarBot {
         final long lengthBase = 36;
         String returnValue = "";
         do {
-            int x = 0;
+            int x;
             x = (int) (locValue % ((long) base36.length()));
             char y = base36.charAt(x);
             returnValue = y + returnValue;
@@ -1436,7 +1434,7 @@ public class EpicWarBot {
     public static String createFingerprint(
             final HashMap<String, String> param1) {
         final int startIndexXEnv = 6;
-        final Map<String, String> loc3 = new TreeMap<String, String>(
+        final Map<String, String> loc3 = new TreeMap<>(
                 new Comparator<String>() {
                     @Override
                     public int compare(final String lhs,
@@ -1450,8 +1448,7 @@ public class EpicWarBot {
             String loc6key = cvl.getKey();
             String loc6val = cvl.getValue();
             if (loc6key.contains("X-Env")) {
-                int index = startIndexXEnv;
-                String loc2 = loc6key.substring(index).toUpperCase(
+                String loc2 = loc6key.substring(startIndexXEnv).toUpperCase(
                         Locale.getDefault());
                 loc3.put(loc2, loc6val);
             }
@@ -1576,7 +1573,7 @@ public class EpicWarBot {
                                    final HashMap<String, Object> sendData,
                                    final String vkSecret) {
         String currSig = vkId;
-        TreeMap<String, String> cSendData = new TreeMap<String, String>();
+        TreeMap<String, String> cSendData = new TreeMap<>();
         for (Entry<String, Object> inCKeyVal : sendData.entrySet()) {
             String inKey = inCKeyVal.getKey();
             String inVal = inCKeyVal.getValue().toString();
