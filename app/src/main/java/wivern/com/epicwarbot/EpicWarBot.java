@@ -303,6 +303,7 @@ public class EpicWarBot {
 
     /**
      * clear all values.
+     *
      * @param constructor if true - create values
      */
     private void init(final boolean constructor) {
@@ -339,6 +340,7 @@ public class EpicWarBot {
 
     /**
      * set use proxy for http.
+     *
      * @param useProxy is use the proxy
      */
     public static void setUseProxy(final boolean useProxy) {
@@ -347,17 +349,26 @@ public class EpicWarBot {
 
     /**
      * set proxy settings.
-     * @param ip ip
+     *
+     * @param ip   ip
      * @param port port
      */
     public static void setProxy(final String ip, final int port) {
         mProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ip, port));
     }
 
-    public AnswerInfo VKConnect(String vkLogin, String vkPassword) {
+    /**
+     * connect to vk.
+     *
+     * @param vkLogin    login
+     * @param vkPassword password
+     * @return answer info structure
+     */
+    public final AnswerInfo vkConnect(final String vkLogin,
+                                      final String vkPassword) {
         AnswerInfo retResult = new AnswerInfo();
         init(false);
-        Log.d(LOG_TAG, "VKConnect: " + vkLogin + " " + vkPassword);
+        Log.d(LOG_TAG, "vkConnect: " + vkLogin + " " + vkPassword);
         final String urlPath = "http://login.vk.com/";
         HashMap<String, Object> cSendData = new HashMap<String, Object>();
 
@@ -366,20 +377,21 @@ public class EpicWarBot {
         cSendData.put("act", "login");
         cSendData.put("amp;to", "&amp;");
 
-        ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
-            HashMap<String, String> vkPairs = FindPairsInText(
+            HashMap<String, String> vkPairs = findPairsInText(
                     retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
                     "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
-            if (vkPairs.containsKey("id") == true) {
+            if (vkPairs.containsKey("id")) {
                 mVkId = vkPairs.get("id");
                 if (mVkId != "0") {
                     mVkConnected = true;
                     retResult.set("Connected!", retDict.getStatus().toString(),
                             false, "");
                 } else {
-                    retResult.set("Not connected!", retDict.getStatus().toString(),
+                    retResult.set("Not connected!",
+                            retDict.getStatus().toString(),
                             true, "Authorization problem: vkId == 0");
                 }
             } else {
@@ -388,14 +400,19 @@ public class EpicWarBot {
             }
         } else {
             Log.d(LOG_TAG, retDict.getErrorMsg());
-            retResult.set("Not connected!", retDict.getStatus().toString(), true,
-                    "retDict.getStatus() != Status.SUCCESS");
+            retResult.set("Not connected!", retDict.getStatus().toString(),
+                    true, "retDict.getStatus() != Status.SUCCESS");
         }
         return retResult;
     }
 
-    public AnswerInfo VKDisconnect() {
-        Log.d(LOG_TAG, "VKDisconnect");
+    /**
+     * disconnect from vk.
+     *
+     * @return answer info structure
+     */
+    public final AnswerInfo vkDisconnect() {
+        Log.d(LOG_TAG, "vkDisconnect");
         AnswerInfo retResult = new AnswerInfo();
         init(false);
         final String urlPath = "http://vk.com/login.php";
@@ -403,14 +420,15 @@ public class EpicWarBot {
 
         cSendData.put("op", "logout");
 
-        ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
-            retResult
-                    .set("Disconnected!", retDict.getStatus().toString(), false, "");
+            retResult.set("Disconnected!",
+                    retDict.getStatus().toString(), false, "");
         } else {
             Log.d(LOG_TAG, retDict.getErrorMsg());
-            retResult.set("Not disconnected!", retDict.getStatus().toString(), true,
+            retResult.set("Not disconnected!",
+                    retDict.getStatus().toString(), true,
                     "retDict.getStatus() != Status.SUCCESS");
         }
         init(false);
@@ -418,10 +436,18 @@ public class EpicWarBot {
         return retResult;
     }
 
-    public AnswerInfo GameConnect() {
+    /**
+     * connect to game.
+     *
+     * @return answer info structure
+     */
+    public final AnswerInfo gameConnect() {
+        final int refId = 9;
+        final int rndVer = 32546;
+        final int al = -1;
         Log.d(LOG_TAG, "GameConnect");
         AnswerInfo retResult = new AnswerInfo();
-        if (mVkConnected == false) {
+        if (!mVkConnected) {
             retResult.set("Not connected!", "", true,
                     "Vkontakte not connected!");
             return retResult;
@@ -434,23 +460,24 @@ public class EpicWarBot {
         cSendData.put("__query", "clashofthrones");
         cSendData.put("_ref", "apps");
         cSendData.put("_tstat", "353%2C110%2C291%2C359%2Capps");
-        cSendData.put("al", -1);
+        cSendData.put("al", al);
         cSendData.put("al_id", mVkId);
         cSendData.put("mid", mVkId);
-        cSendData.put("ref", 9);
-        cSendData.put("_rndVer", 32546);
+        cSendData.put("ref", refId);
+        cSendData.put("_rndVer", rndVer);
 
-        ReturnData retDict = GetPost(urlPath, "GET", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
-            String patternPair = "[,\\s\\n\\r]*\\\\\"([^:^\\\\]*)\\\\\":\\s*[\\\\\"]*(.*?)(\\\\\"|,|$)";
-            HashMap<String, String> paramPairs = FindPairsInText(
+            String patternPair = "[,\\s\\n\\r]*\\\\\"([^:^\\\\]*"
+                    + ")\\\\\":\\s*[\\\\\"]*(.*?)(\\\\\"|,|$)";
+            HashMap<String, String> paramPairs = findPairsInText(
                     retDict.getResponseStr(), "var params\\s*=\\s*\\{(.*?)\\}",
                     patternPair);
-            HashMap<String, String> optionPairs = FindPairsInText(
+            HashMap<String, String> optionPairs = findPairsInText(
                     retDict.getResponseStr(), "var options\\s*=\\s*\\{(.*?)\\}",
                     patternPair);
-            if (optionPairs.containsKey("src") == true) {
+            if (optionPairs.containsKey("src")) {
                 String iUrl = optionPairs.get("src");
                 iUrl = iUrl.replace("\\\\\\", "");
                 cSendData.clear();
@@ -463,10 +490,10 @@ public class EpicWarBot {
                     cSendData.put(cKey, cVal);
                 }
                 mSid = (String) cSendData.get("sid");
-                retDict = GetPost(iUrl, "GET", cSendData, cSendHeaders,
+                retDict = getPost(iUrl, "GET", cSendData, cSendHeaders,
                         mCookieManager, false, false);
                 if (retDict.getStatus() == Status.SUCCESS) {
-                    HashMap<String, String> paramFlash = FindPairsInText(
+                    HashMap<String, String> paramFlash = findPairsInText(
                             retDict.getResponseStr(),
                             "params.flashvars\\s*=[\\s\\n\\r]*\"(.*?)\"",
                             "(.*?)=(.*?)(&|$)");
@@ -478,7 +505,7 @@ public class EpicWarBot {
                         mSessionHeaderX.put("X-Auth-Token", mAuthKey);
                         mSessionHeaderX.put("X-Auth-Session-Id",
                                 generateSessionKey());
-                        mSessionHeaderX.put("X-Server-Time", GetCurrTimeStr());
+                        mSessionHeaderX.put("X-Server-Time", getCurrTimeStr());
                         mSessionHeaderX.put("X-Auth-Application-Id", mAppId);
                         mSessionHeaderX.put("X-Auth-User-Id", mVkId);
                         mSessionHeaderX.put("X-Auth-Network-Ident",
@@ -488,7 +515,7 @@ public class EpicWarBot {
                                 .put("X-Request-With", "XMLHttpRequest");
                         // mSessionHeaderX.put("X-Auth-Signature",
                         // createAuthSignature(post));
-                        retResult = SendRecvFirstData();
+                        retResult = sendReceiveFirstData();
                     }
                 }
             }
@@ -497,27 +524,43 @@ public class EpicWarBot {
         return retResult;
     }
 
-    private AnswerInfo SendRecvFirstData() {
-        AnswerInfo retResult = new AnswerInfo();
-        retResult.set("Not connected!", "", true,
-                "SendRecvFirstData return null data");
+    /**
+     * get information about vk id (user name, last name, photo url).
+     * and information about friends
+     *
+     * @return map with information
+     */
+    private HashMap<String, Object> getApiVkAboutUsers() {
+        String errorMessage = "";
+        HashMap<String, Object> retApiUsers = new HashMap<String, Object>();
+
         HashMap<String, Object> formSendData = new HashMap<String, Object>();
         String cCode = "return{\"user\":API.getProfiles({\"https\":0,\"uids\":"
                 + mVkId
-                + ",\"fields\":\"can_post,uid,first_name,last_name,nickname,sex,bdate,photo,photo_medium,photo_big,has_mobile,rate,city,country,photo_max_orig\"}),\"friends\":API.friends.get({\"https\":0,\"count\" : 500, \"fields\":\"uid,country,first_name,last_name,photo,photo_medium,photo_big,sex,can_post,bdate,online,photo_max_orig\"}),\"appFriends\":API.getAppFriends(),\"groups\":API.getGroups()};";
+                + ",\"fields\":\"can_post,uid,first_name,"
+                + "last_name,nickname,sex,"
+                + "bdate,photo,photo_medium,photo_big,"
+                + "has_mobile,rate,city,country,"
+                + "photo_max_orig\"}),\"friends\":"
+                + "API.friends.get({\"https\":0,\"count\" "
+                + ": 500, \"fields\":\"uid,country,first_name,"
+                + "last_name,photo,photo_medium,"
+                + "photo_big,sex,can_post,bdate,online,"
+                + "photo_max_orig\"}),\"appFriends\":"
+                + "API.getAppFriends(),\"groups\":API.getGroups()};";
         formSendData.put("api_id", mAppId);
         formSendData.put("code", cCode);
         formSendData.put("format", "json");
         formSendData.put("https", "0");
         formSendData.put("method", "execute");
-        formSendData.put("rnd", GetRnd());
+        formSendData.put("rnd", getRnd());
         formSendData.put("sid", mSid);
 
         formSendData.put("v", "3.0");
 
-        formSendData.put("sig", CreateSig(mVkId, formSendData, mSecret));
+        formSendData.put("sig", createSig(mVkId, formSendData, mSecret));
         String cSite = "http://vk.com/api.php";
-        ReturnData retDictForm = GetPost(cSite, "POST", formSendData, null,
+        ReturnData retDictForm = getPost(cSite, "POST", formSendData, null,
                 mCookieManager, false, true);
 
         List<String> friendsArray = new ArrayList<String>();
@@ -543,7 +586,7 @@ public class EpicWarBot {
                         vklastName = userData.getString("last_name");
                         vkphotoUrl = userData.getString("photo_medium");
                         vkbirthday = userData.getString("bdate");
-                        vkbirthday = ChangeDateFormat(vkbirthday, "dd.M.yyyy",
+                        vkbirthday = changeDateFormat(vkbirthday, "dd.M.yyyy",
                                 "yyyy-M-dd");
                         vkcity = userData.getInt("city");
                     } catch (JSONException e) {
@@ -552,8 +595,8 @@ public class EpicWarBot {
                 }
                 JSONArray jfriends = jresponse.getJSONArray("friends");
                 for (int i = 0; i < jfriends.length(); i++) {
-                    JSONObject cjfriend_i = jfriends.getJSONObject(i);
-                    long cjfriendid = cjfriend_i.getLong("uid");
+                    JSONObject cjfriendI = jfriends.getJSONObject(i);
+                    long cjfriendid = cjfriendI.getLong("uid");
                     friendsArray.add(String.valueOf(cjfriendid));
                 }
                 JSONArray jappfriends = jresponse.getJSONArray("appFriends");
@@ -563,78 +606,127 @@ public class EpicWarBot {
                     appFriendsArray.add(String.valueOf(cjappfriend));
                 }
             } catch (JSONException e) {
-                retResult.set("Not connected!", e.toString(), true,
-                        "SendRecvFirstData parse json error");
+                errorMessage = "Not connected!" + e.toString()
+                        + "sendRecvFirstData parse json error";
             }
         }
+        retApiUsers.put("friendsArray", friendsArray);
+        retApiUsers.put("appFriendsArray", appFriendsArray);
+        retApiUsers.put("vkbirthday", vkbirthday);
+        retApiUsers.put("vkcity", vkcity);
+        retApiUsers.put("vkfirstName", vkfirstName);
+        retApiUsers.put("vkphotoUrl", vkphotoUrl);
+        retApiUsers.put("vklastName", vklastName);
+        retApiUsers.put("errorMessage", errorMessage);
+
+        return retApiUsers;
+    }
+
+    /**
+     * send first data to game.
+     *
+     * @return return data from html
+     */
+    private ReturnData sendFirstData() {
+        ReturnData retDict = new ReturnData();
+
+        List<String> friendsArray = new ArrayList<String>();
+        List<String> appFriendsArray = new ArrayList<String>();
+
+        HashMap<String, Object> retApiUsers = getApiVkAboutUsers();
+        String vkbirthday = retApiUsers.get("vkbirthday").toString();
+        int vkcity = (int) retApiUsers.get("vkcity");
+        String vkfirstName = retApiUsers.get("vkfirstName").toString();
+        String vkphotoUrl = retApiUsers.get("vkphotoUrl").toString();
+        String vklastName = retApiUsers.get("vklastName").toString();
+        String errorMessage = retApiUsers.get("errorMessage").toString();
+        friendsArray = (List<String>) retApiUsers.get("friendsArray");
+        appFriendsArray = (List<String>) retApiUsers.get("appFriendsArray");
 
         if (vkfirstName == "") {
-            return retResult;
+            retDict.setErrorMsg(errorMessage);
+            return retDict;
         }
-        HashMap<String, Object> j_referrer = new HashMap<String, Object>();
-        j_referrer.put("type", ToJsonString("user_apps"));
-        j_referrer.put("id", 0);
-        HashMap<String, Object> j_user = new HashMap<String, Object>();
-        j_user.put("country", ToJsonString("function Function() []"));
-        j_user.put("birthday", ToJsonString(vkbirthday));
-        j_user.put("sex", ToJsonString("male"));
-        j_user.put("locale", ToJsonString("en"));
-        j_user.put("id", ToJsonString(mVkId));
-        j_user.put("city", vkcity);
-        j_user.put("firstName", ToJsonString(vkfirstName));
-        j_user.put("photoUrl", ToJsonString(vkphotoUrl));
-        j_user.put("lastName", ToJsonString(vklastName));
-        j_user.put("referrer", j_referrer);
-        HashMap<String, Object> j_argsRegistration = new HashMap<String, Object>();
-        j_argsRegistration.put("friendIds", friendsArray);
-        j_argsRegistration.put("user", j_user);
-        HashMap<String, Object> j_argscheckRegisteredUsers = new HashMap<String, Object>();
-        j_argscheckRegisteredUsers.put("users", appFriendsArray);
-        HashMap<String, Object> j_argsinvitationGetUsers = new HashMap<String, Object>();
-        j_argsinvitationGetUsers.put("ids", friendsArray);
-        HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
-        List<Object> j_calls = new ArrayList<Object>();
-        j_calls.add(GenCall("registration", j_argsRegistration, null));
-        j_calls.add(GenCall("boostGetAll", j_argsEmpty, null));
-        j_calls.add(GenCall("artefactGetList", j_argsEmpty, null));
-        j_calls.add(GenCall("battleStatisticGet", j_argsEmpty, null));
-        j_calls.add(GenCall("getTime", j_argsEmpty, null));
-        j_calls.add(GenCall("getSelfInfo", j_argsEmpty, null));
-        j_calls.add(GenCall("getDynamicParams", j_argsEmpty, null));
-        j_calls.add(GenCall("getArmyQueue", j_argsEmpty, null));
-        j_calls.add(GenCall("getBuildings", j_argsEmpty, null));
-        j_calls.add(GenCall("heroesGetList", j_argsEmpty, null));
-        j_calls.add(GenCall("getResearchQueue", j_argsEmpty, null));
-        j_calls.add(GenCall("getMissions", j_argsEmpty, null));
-        j_calls.add(GenCall("getQuests", j_argsEmpty, null));
-        j_calls.add(GenCall("getProtections", j_argsEmpty, null));
-        j_calls.add(GenCall("getInvitedBy", j_argsEmpty, null));
-        j_calls.add(GenCall("getInvitedUsers", j_argsEmpty, null));
-        j_calls.add(GenCall("getBonusCrystals", j_argsEmpty, null));
-        j_calls.add(GenCall("getSettings", j_argsEmpty, null));
-        j_calls.add(GenCall("promoGetHalfBilling", j_argsEmpty, null));
-        j_calls.add(GenCall("giftGetAvailable", j_argsEmpty, null));
-        j_calls.add(GenCall("giftGetReceivers", j_argsEmpty, null));
-        j_calls.add(GenCall("cloverGetAll", j_argsEmpty, null));
-        j_calls.add(GenCall("paymentsCount", j_argsEmpty, null));
-        j_calls.add(GenCall("cemeteryGet", j_argsEmpty, null));
-        j_calls.add(GenCall("getNotices", j_argsEmpty, null));
-        j_calls.add(GenCall("allianceGetMessages", j_argsEmpty, null));
-        j_calls.add(GenCall("getGlobalNews", j_argsEmpty, null));
-        j_calls.add(GenCall("battleGetActive", j_argsEmpty, null));
-        j_calls.add(GenCall("spellList", j_argsEmpty, null));
-        j_calls.add(GenCall("spellProductionQueue", j_argsEmpty, null));
-        j_calls.add(GenCall("checkRegisteredUsers", j_argscheckRegisteredUsers,
+        HashMap<String, Object> jReferrer = new HashMap<String, Object>();
+        jReferrer.put("type", toJsonString("user_apps"));
+        jReferrer.put("id", 0);
+        HashMap<String, Object> jUser = new HashMap<String, Object>();
+        jUser.put("country", toJsonString("function Function() []"));
+        jUser.put("birthday", toJsonString(vkbirthday));
+        jUser.put("sex", toJsonString("male"));
+        jUser.put("locale", toJsonString("en"));
+        jUser.put("id", toJsonString(mVkId));
+        jUser.put("city", vkcity);
+        jUser.put("firstName", toJsonString(vkfirstName));
+        jUser.put("photoUrl", toJsonString(vkphotoUrl));
+        jUser.put("lastName", toJsonString(vklastName));
+        jUser.put("referrer", jReferrer);
+        HashMap<String, Object> jArgsRegistration =
+                new HashMap<String, Object>();
+        jArgsRegistration.put("friendIds", friendsArray);
+        jArgsRegistration.put("user", jUser);
+        HashMap<String, Object> jArgscheckRegisteredUsers =
+                new HashMap<String, Object>();
+        jArgscheckRegisteredUsers.put("users", appFriendsArray);
+        HashMap<String, Object> jArgsinvitationGetUsers =
+                new HashMap<String, Object>();
+        jArgsinvitationGetUsers.put("ids", friendsArray);
+        HashMap<String, Object> jArgsEmpty =
+                new HashMap<String, Object>();
+        List<Object> jCalls = new ArrayList<Object>();
+        jCalls.add(genCall("registration", jArgsRegistration, null));
+        jCalls.add(genCall("boostGetAll", jArgsEmpty, null));
+        jCalls.add(genCall("artefactGetList", jArgsEmpty, null));
+        jCalls.add(genCall("battleStatisticGet", jArgsEmpty, null));
+        jCalls.add(genCall("getTime", jArgsEmpty, null));
+        jCalls.add(genCall("getSelfInfo", jArgsEmpty, null));
+        jCalls.add(genCall("getDynamicParams", jArgsEmpty, null));
+        jCalls.add(genCall("getArmyQueue", jArgsEmpty, null));
+        jCalls.add(genCall("getBuildings", jArgsEmpty, null));
+        jCalls.add(genCall("heroesGetList", jArgsEmpty, null));
+        jCalls.add(genCall("getResearchQueue", jArgsEmpty, null));
+        jCalls.add(genCall("getMissions", jArgsEmpty, null));
+        jCalls.add(genCall("getQuests", jArgsEmpty, null));
+        jCalls.add(genCall("getProtections", jArgsEmpty, null));
+        jCalls.add(genCall("getInvitedBy", jArgsEmpty, null));
+        jCalls.add(genCall("getInvitedUsers", jArgsEmpty, null));
+        jCalls.add(genCall("getBonusCrystals", jArgsEmpty, null));
+        jCalls.add(genCall("getSettings", jArgsEmpty, null));
+        jCalls.add(genCall("promoGetHalfBilling", jArgsEmpty, null));
+        jCalls.add(genCall("giftGetAvailable", jArgsEmpty, null));
+        jCalls.add(genCall("giftGetReceivers", jArgsEmpty, null));
+        jCalls.add(genCall("cloverGetAll", jArgsEmpty, null));
+        jCalls.add(genCall("paymentsCount", jArgsEmpty, null));
+        jCalls.add(genCall("cemeteryGet", jArgsEmpty, null));
+        jCalls.add(genCall("getNotices", jArgsEmpty, null));
+        jCalls.add(genCall("allianceGetMessages", jArgsEmpty, null));
+        jCalls.add(genCall("getGlobalNews", jArgsEmpty, null));
+        jCalls.add(genCall("battleGetActive", jArgsEmpty, null));
+        jCalls.add(genCall("spellList", jArgsEmpty, null));
+        jCalls.add(genCall("spellProductionQueue", jArgsEmpty, null));
+        jCalls.add(genCall("checkRegisteredUsers", jArgscheckRegisteredUsers,
                 null));
-        j_calls.add(GenCall("invitationGetUsers", j_argsinvitationGetUsers,
+        jCalls.add(genCall("invitationGetUsers", jArgsinvitationGetUsers,
                 null));
-        j_calls.add(GenCall("state", j_argsEmpty, null));
+        jCalls.add(genCall("state", jArgsEmpty, null));
 
         HashMap<String, Object> jsonData = new HashMap<String, Object>();
         jsonData.put("sesion", null);
-        jsonData.put("calls", j_calls);
+        jsonData.put("calls", jCalls);
 
-        ReturnData retDict = SendRecv(jsonData);
+        retDict = sendReceive(jsonData);
+
+        return retDict;
+    }
+
+    /**
+     * send and analyse first data from game.
+     *
+     * @return answer info
+     */
+    private AnswerInfo sendReceiveFirstData() {
+        AnswerInfo retResult = new AnswerInfo();
+        ReturnData retDict = sendFirstData();
         if (retDict.getStatus() == Status.SUCCESS) {
             try {
                 JSONObject retDictFormJson = new JSONObject(new JSONTokener(
@@ -643,7 +735,7 @@ public class EpicWarBot {
                 for (int i = 0; i < jresults.length(); i++) {
                     JSONObject fbobj = jresults.getJSONObject(i);
                     String fcident = fbobj.getString("ident");
-                    if (fcident.contentEquals("giftGetAvailable") == true) {
+                    if (fcident.contentEquals("giftGetAvailable")) {
                         JSONObject fgiftRes = fbobj.getJSONObject("result");
                         JSONArray fgiftArr = fgiftRes.getJSONArray("gift");
                         for (int j = 0; j < fgiftArr.length(); j++) {
@@ -654,13 +746,14 @@ public class EpicWarBot {
                             JSONObject cGiftUserInfo = cGiftBody
                                     .getJSONObject("userInfo");
                             String cGiftUserId = cGiftUserInfo.getString("id");
-                            List<String> cArrayUserIds = new ArrayList<String>();
+                            List<String> cArrayUserIds =
+                                    new ArrayList<String>();
                             cArrayUserIds.add(cGiftIDS);
                             GiftInfo gi = new GiftInfo(cGiftUserId,
                                     cArrayUserIds);
                             mFriendGifts.add(gi);
                         }
-                    } else if (fcident.contentEquals("getBuildings") == true) {
+                    } else if (fcident.contentEquals("getBuildings")) {
                         JSONObject fbuildRes = fbobj.getJSONObject("result");
                         JSONArray fbuildArray = fbuildRes
                                 .getJSONArray("building");
@@ -669,8 +762,9 @@ public class EpicWarBot {
                                     .getJSONObject(j);
                             int cTypeOfBuild = fcBuildInfo.getInt("typeId");
                             int cIdOfBuild = fcBuildInfo.getInt("id");
-                            boolean cCompl = fcBuildInfo.getBoolean("completed");
-                            if (cCompl == true) {
+                            boolean cCompl =
+                                    fcBuildInfo.getBoolean("completed");
+                            if (cCompl) {
                                 if (cTypeOfBuild == MILL_ID) {
                                     mArrayMillMine.add(cIdOfBuild);
                                 } else if (cTypeOfBuild == MINE_ID) {
@@ -680,7 +774,7 @@ public class EpicWarBot {
                                 }
                             }
                         }
-                    } else if (fcident.contentEquals("checkRegisteredUsers") == true) {
+                    } else if (fcident.contentEquals("checkRegisteredUsers")) {
                         JSONObject fusersRes = fbobj.getJSONObject("result");
                         JSONArray fusersArray = fusersRes
                                 .getJSONArray("result");
@@ -688,7 +782,7 @@ public class EpicWarBot {
                             String cUser = fusersArray.getString(j);
                             mFriendSendGifts.add(cUser);
                         }
-                    } else if (fcident.contentEquals("giftGetReceivers") == true) {
+                    } else if (fcident.contentEquals("giftGetReceivers")) {
                         JSONObject fusersRes = fbobj.getJSONObject("result");
                         JSONArray fusersArray = fusersRes
                                 .getJSONArray("receivers");
@@ -697,7 +791,7 @@ public class EpicWarBot {
                             String cUserId = cUserObj.getString("toUserId");
                             mFriendAlreadySendGifts.add(cUserId);
                         }
-                    } else if (fcident.contentEquals("cemeteryGet") == true) {
+                    } else if (fcident.contentEquals("cemeteryGet")) {
                         JSONObject fcemeteryRes = fbobj.getJSONObject("result");
                         JSONArray fcemeteryArray = fcemeteryRes
                                 .getJSONArray("result");
@@ -710,27 +804,37 @@ public class EpicWarBot {
                 retResult.set("Game connected!", "", true, "");
             } catch (JSONException e) {
                 retResult.set("Not connected!", e.toString(), true,
-                        "retDictFormJson parse error " + retDict.getResponseStr());
+                        "retDictFormJson parse error "
+                                + retDict.getResponseStr());
             }
 
+        } else {
+            retResult.set("Not connected!", "", true,
+                    "sendReceiveFirstData return null data: "
+                            + retDict.getErrorMsg());
         }
 
         return retResult;
     }
 
-    public AnswerInfo CemeteryFarm() {
+    /**
+     * cemetery farm.
+     *
+     * @return answer info
+     */
+    public final AnswerInfo cemeteryFarm() {
         AnswerInfo retResult = new AnswerInfo();
 
         if (mCemetery) {
-            HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
-            List<Object> j_calls = new ArrayList<Object>();
-            j_calls.add(GenCall("group_0_body", j_argsEmpty, "cemeteryFarm"));
-            j_calls.add(GenCall("group_1_body", j_argsEmpty, "state"));
+            HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
+            List<Object> jCalls = new ArrayList<Object>();
+            jCalls.add(genCall("group_0_body", jArgsEmpty, "cemeteryFarm"));
+            jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
             HashMap<String, Object> jsonData = new HashMap<String, Object>();
             jsonData.put("sesion", null);
-            jsonData.put("calls", j_calls);
+            jsonData.put("calls", jCalls);
 
-            ReturnData retDict = SendRecv(jsonData);
+            ReturnData retDict = sendReceive(jsonData);
             if (retDict.getStatus() == Status.SUCCESS) {
                 retResult.set("Cemetery farm ok!", "", false, "");
             }
@@ -740,36 +844,43 @@ public class EpicWarBot {
         return retResult;
     }
 
-    public AnswerInfo GiftSend() {
+    /**
+     * send gift.
+     *
+     * @return answer info
+     */
+    public final AnswerInfo giftSend() {
         AnswerInfo retResult = new AnswerInfo();
         List<String> friendNeedSendGifts = new ArrayList<String>();
         for (String cUserSend : mFriendSendGifts) {
             boolean needSend = true;
             for (String cUserAlreadySend : mFriendAlreadySendGifts) {
-                if (cUserSend.contentEquals(cUserAlreadySend) == true) {
+                if (cUserSend.contentEquals(cUserAlreadySend)) {
                     needSend = false;
                     break;
                 }
             }
-            if (needSend == true) {
+            if (needSend) {
                 friendNeedSendGifts.add(cUserSend);
             }
         }
         if (friendNeedSendGifts.size() > 0) {
-            HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
-            HashMap<String, Object> j_argsUsers = new HashMap<String, Object>();
-            j_argsUsers.put("users", friendNeedSendGifts);
-            HashMap<String, Object> j_argsUsersEmpty = new HashMap<String, Object>();
-            j_argsUsersEmpty.put("users", new ArrayList<Object>());
-            List<Object> j_calls = new ArrayList<Object>();
-            j_calls.add(GenCall("group_0_body", j_argsUsers, "giftSend"));
-            j_calls.add(GenCall("group_1_body", j_argsUsersEmpty, "getUsersInfo"));
-            j_calls.add(GenCall("group_2_body", j_argsEmpty, "state"));
+            HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
+            HashMap<String, Object> jArgsUsers = new HashMap<String, Object>();
+            jArgsUsers.put("users", friendNeedSendGifts);
+            HashMap<String, Object> jArgsUsersEmpty =
+                    new HashMap<String, Object>();
+            jArgsUsersEmpty.put("users", new ArrayList<Object>());
+            List<Object> jCalls = new ArrayList<Object>();
+            jCalls.add(genCall("group_0_body", jArgsUsers, "giftSend"));
+            jCalls.add(genCall("group_1_body", jArgsUsersEmpty,
+                    "getUsersInfo"));
+            jCalls.add(genCall("group_2_body", jArgsEmpty, "state"));
             HashMap<String, Object> jsonData = new HashMap<String, Object>();
             jsonData.put("sesion", null);
-            jsonData.put("calls", j_calls);
+            jsonData.put("calls", jCalls);
 
-            ReturnData retDict = SendRecv(jsonData);
+            ReturnData retDict = sendReceive(jsonData);
             if (retDict.getStatus() == Status.SUCCESS) {
                 retResult.set("Gift send ok!", "", false, "");
             }
@@ -778,23 +889,29 @@ public class EpicWarBot {
         return retResult;
     }
 
-    public boolean giftFarm(GiftInfo giftInfo) {
+    /**
+     * gift farm from friend.
+     *
+     * @param giftInfo gift info
+     * @return true - farmed
+     */
+    public final boolean giftFarm(final GiftInfo giftInfo) {
         boolean farmed = false;
-        HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
-        HashMap<String, Object> j_argsuserId = new HashMap<String, Object>();
-        j_argsuserId.put("userId", giftInfo.getUserId());
-        HashMap<String, Object> j_argsids = new HashMap<String, Object>();
-        j_argsids.put("ids", giftInfo.getIdsArr());
-        List<Object> j_calls = new ArrayList<Object>();
-        j_calls.add(GenCall("group_0_body", j_argsuserId, "giftFarm"));
-        j_calls.add(GenCall("group_1_body", j_argsids, "removeNotices"));
-        j_calls.add(GenCall("group_2_body", j_argsEmpty, "giftGetAvailable"));
-        j_calls.add(GenCall("group_3_body", j_argsEmpty, "state"));
+        HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
+        HashMap<String, Object> jArgsuserId = new HashMap<String, Object>();
+        jArgsuserId.put("userId", giftInfo.getUserId());
+        HashMap<String, Object> jArgsids = new HashMap<String, Object>();
+        jArgsids.put("ids", giftInfo.getIdsArr());
+        List<Object> jCalls = new ArrayList<Object>();
+        jCalls.add(genCall("group_0_body", jArgsuserId, "giftFarm"));
+        jCalls.add(genCall("group_1_body", jArgsids, "removeNotices"));
+        jCalls.add(genCall("group_2_body", jArgsEmpty, "giftGetAvailable"));
+        jCalls.add(genCall("group_3_body", jArgsEmpty, "state"));
         HashMap<String, Object> jsonData = new HashMap<String, Object>();
         jsonData.put("sesion", null);
-        jsonData.put("calls", j_calls);
+        jsonData.put("calls", jCalls);
 
-        ReturnData retDict = SendRecv(jsonData);
+        ReturnData retDict = sendReceive(jsonData);
         if (retDict.getStatus() == Status.SUCCESS) {
             farmed = true;
         }
@@ -802,16 +919,21 @@ public class EpicWarBot {
         return farmed;
     }
 
-    public AnswerInfo FarmAllGifts() {
+    /**
+     * farm all gift from friends.
+     *
+     * @return answer info structure
+     */
+    public final AnswerInfo farmAllGifts() {
         AnswerInfo retResult = new AnswerInfo();
         boolean allFarmed = true;
         for (GiftInfo currGiftInfo : mFriendGifts) {
-            if (giftFarm(currGiftInfo) == false) {
+            if (!giftFarm(currGiftInfo)) {
                 allFarmed = false;
                 break;
             }
         }
-        if (allFarmed == true) {
+        if (allFarmed) {
             retResult.set("All farmed!", "", false, "");
         } else {
             retResult.set("Error farmed!", "", true, "");
@@ -820,19 +942,25 @@ public class EpicWarBot {
         return retResult;
     }
 
-    public boolean collectResourceFromBuilding(int id) {
+    /**
+     * collect resource from building.
+     *
+     * @param id of building
+     * @return true - collected
+     */
+    public final boolean collectResourceFromBuilding(final int id) {
         boolean collected = false;
-        HashMap<String, Object> j_argsEmpty = new HashMap<String, Object>();
-        HashMap<String, Object> j_argsbuildingId = new HashMap<String, Object>();
-        j_argsbuildingId.put("buildingId", id);
-        List<Object> j_calls = new ArrayList<Object>();
-        j_calls.add(GenCall("group_0_body", j_argsbuildingId, "collectResource"));
-        j_calls.add(GenCall("group_1_body", j_argsEmpty, "state"));
+        HashMap<String, Object> jArgsEmpty = new HashMap<String, Object>();
+        HashMap<String, Object> jArgsbuildingId = new HashMap<String, Object>();
+        jArgsbuildingId.put("buildingId", id);
+        List<Object> jCalls = new ArrayList<Object>();
+        jCalls.add(genCall("group_0_body", jArgsbuildingId, "collectResource"));
+        jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
         HashMap<String, Object> jsonData = new HashMap<String, Object>();
         jsonData.put("sesion", null);
-        jsonData.put("calls", j_calls);
+        jsonData.put("calls", jCalls);
 
-        ReturnData retDict = SendRecv(jsonData);
+        ReturnData retDict = sendReceive(jsonData);
         if (retDict.getStatus() == Status.SUCCESS) {
             collected = true;
         }
@@ -840,30 +968,35 @@ public class EpicWarBot {
         return collected;
     }
 
-    public AnswerInfo collectAllResources() {
+    /**
+     * collect all resources.
+     *
+     * @return answer info structure
+     */
+    public final AnswerInfo collectAllResources() {
         AnswerInfo retResult = new AnswerInfo();
         boolean collected = true;
 
         for (int cId : mArrayMillMine) {
-            if (collectResourceFromBuilding(cId) == false) {
+            if (!collectResourceFromBuilding(cId)) {
                 collected = false;
                 break;
             }
         }
         for (int cId : mArrayGoldMine) {
-            if (collectResourceFromBuilding(cId) == false) {
+            if (!collectResourceFromBuilding(cId)) {
                 collected = false;
                 break;
             }
         }
         for (int cId : mArraySandMine) {
-            if (collectResourceFromBuilding(cId) == false) {
+            if (!collectResourceFromBuilding(cId)) {
                 collected = false;
                 break;
             }
         }
 
-        if (collected == true) {
+        if (collected) {
             retResult.set("All collected!", "", false, "");
         } else {
             retResult.set("Error collected!", "", true, "");
@@ -872,15 +1005,31 @@ public class EpicWarBot {
         return retResult;
     }
 
-    public static ReturnData GetPost(String urlString, String typePostGet,
-                                     HashMap<String, Object> inData, HashMap<String, String> headers,
-                                     CookieManager cookieManager, boolean flJSON, boolean flForm) {
+    /**
+     * get or post http query.
+     *
+     * @param urlString     url
+     * @param typePostGet   type - "POST" or "GET"
+     * @param inData        input data
+     * @param header        headers data
+     * @param cookieManager cookie manager
+     * @param flJSON        is json
+     * @param flForm        is form
+     * @return return data structure
+     */
+    public static final ReturnData getPost(final String urlString,
+                                           final String typePostGet,
+                                           final HashMap<String, Object> inData,
+                                           final HashMap<String, String> header,
+                                           final CookieManager cookieManager,
+                                           final boolean flJSON,
+                                           final boolean flForm) {
         boolean autoRedirect = false;
 
         ReturnData responseData = new ReturnData();
-        if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") != true
-                && typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
-                "get") != true) {
+        if (!typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post")
+                && !typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
+                "get")) {
             Log.d(LOG_TAG, "Wrong getpost type: " + typePostGet);
             responseData.setErrorMsg("Wrong getpost type: " + typePostGet);
             responseData.setStatus(Status.ERROR);
@@ -889,7 +1038,7 @@ public class EpicWarBot {
         String cUrlString = urlString;
         String postString = "";
 
-        if (flJSON == false) {
+        if (!flJSON) {
             for (Entry<String, Object> cVal : inData.entrySet()) {
                 if (postString != "") {
                     postString += "&";
@@ -897,7 +1046,7 @@ public class EpicWarBot {
                 postString += cVal.getKey() + "=" + cVal.getValue().toString();
             }
             if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
-                    "get") == true
+                    "get")
                     && postString != "") {
                 cUrlString += "?" + postString;
             }
@@ -916,7 +1065,7 @@ public class EpicWarBot {
         }
         HttpURLConnection request;
         try {
-            if (mUseProxy == true && mProxy != null) {
+            if (mUseProxy && mProxy != null) {
                 request = (HttpURLConnection) (reqURL.openConnection(mProxy));
             } else {
                 request = (HttpURLConnection) (reqURL.openConnection());
@@ -926,56 +1075,23 @@ public class EpicWarBot {
             responseData.setStatus(Status.ERROR);
             return responseData;
         }
-        request.setInstanceFollowRedirects(autoRedirect);
-        // Log.d(LOG_TAG, "Using proxy: " + request.usingProxy());
-        request.setDoOutput(true);
-        if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
-            request.setDoInput(true);
-        }
-        request.setConnectTimeout(1000);
-        request.setReadTimeout(15000);
-        if (typePostGet.toLowerCase(Locale.getDefault()) == "post") {
-            request.addRequestProperty("Content-Length",
-                    Integer.toString(postString.length()));
-        }
-
         try {
-            request.setRequestMethod(typePostGet);
+            request.setInstanceFollowRedirects(autoRedirect);
+            setUrlConnection(request,
+                    postString,
+                    typePostGet,
+                    header,
+                    flJSON,
+                    flForm,
+                    cookieManager);
         } catch (ProtocolException e) {
             responseData.setErrorMsg(e.toString());
             responseData.setStatus(Status.ERROR);
             return responseData;
         }
 
-        request.addRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60");
-        request.addRequestProperty("Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        request.addRequestProperty("Accept-Encoding",
-                "gzip, deflate, lzma, sdch");
-        request.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
-        if (flJSON == true) {
-            request.addRequestProperty("content-type",
-                    "application/json; charset=UTF-8");
-            // request.addRequestProperty("Accept", "application/json");
-        }
-        if (flForm == true) {
-            request.addRequestProperty("content-type",
-                    "application/x-www-form-urlencoded");
-        }
-        if (headers != null) {
-            for (Entry<String, String> cVal : headers.entrySet()) {
-                request.addRequestProperty(cVal.getKey(), cVal.getValue());
-            }
-        }
-        if (cookieManager.getCookieStore().getCookies().size() > 0) {
-            request.setRequestProperty(
-                    "Cookie",
-                    JoinCookie(";", cookieManager.getCookieStore().getCookies()));
-        }
-
-        if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post") == true) {
+        if (typePostGet.toLowerCase(Locale.getDefault())
+                .contentEquals("post")) {
 
             try {
                 OutputStreamWriter writer = null;
@@ -992,93 +1108,27 @@ public class EpicWarBot {
 
         }
 
-        if (autoRedirect == false) {
-            int HttpResult;
-            String currLocation;
-            String currUrl = urlString;
-            URL baseURL;
-            URL nextURL;
-            while (true) {
-                try {
-                    HttpResult = request.getResponseCode();
-                    Map<String, List<String>> headerFields = request
-                            .getHeaderFields();
-                    List<String> cookiesHeader = headerFields
-                            .get(COOKIES_HEADER);
-
-                    if (cookiesHeader != null) {
-                        for (String cookie : cookiesHeader) {
-                            cookieManager.getCookieStore().add(null,
-                                    HttpCookie.parse(cookie).get(0));
-                        }
-                    }
-                } catch (IOException e) {
-                    responseData.setErrorMsg(e.toString());
-                    responseData.setStatus(Status.ERROR);
-                    return responseData;
-                }
-                switch (HttpResult) {
-                    case HttpURLConnection.HTTP_MOVED_PERM:
-                    case HttpURLConnection.HTTP_MOVED_TEMP:
-                    case HttpURLConnection.HTTP_SEE_OTHER:
-                        currLocation = request.getHeaderField("Location");
-                        try {
-                            baseURL = new URL(currUrl);
-                            nextURL = new URL(baseURL, currLocation);
-                        } catch (MalformedURLException e) {
-                            responseData.setErrorMsg(e.toString());
-                            responseData.setStatus(Status.ERROR);
-                            return responseData;
-                        }
-
-                        currUrl = nextURL.toExternalForm();
-                        try {
-                            if (mUseProxy == true && mProxy != null) {
-                                request = (HttpURLConnection) nextURL
-                                        .openConnection(mProxy);
-                            } else {
-                                request = (HttpURLConnection) nextURL
-                                        .openConnection();
-                            }
-                        } catch (IOException e) {
-                            responseData.setErrorMsg(e.toString());
-                            responseData.setStatus(Status.ERROR);
-                            return responseData;
-                        }
-                        request.addRequestProperty(
-                                "User-Agent",
-                                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60");
-                        request.addRequestProperty("Accept",
-                                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-                        request.addRequestProperty("Accept-Encoding",
-                                "gzip, deflate, lzma, sdch");
-                        request.addRequestProperty("Accept-Language",
-                                "en-US,en;q=0.8");
-                        if (cookieManager.getCookieStore().getCookies().size() > 0) {
-                            request.setRequestProperty(
-                                    "Cookie",
-                                    JoinCookie(";", cookieManager.getCookieStore()
-                                            .getCookies()));
-                        }
-                        request.setConnectTimeout(15000);
-                        request.setReadTimeout(15000);
-                        request.setInstanceFollowRedirects(false);
-                        continue;
-                }
-
-                break;
+        if (!autoRedirect) {
+            try {
+                request = aRedirect(
+                        urlString, cookieManager,
+                        request);
+            } catch (IOException e) {
+                responseData.setErrorMsg(e.toString());
+                responseData.setStatus(Status.ERROR);
+                return responseData;
             }
         }
 
         try {
             StringBuilder sb = new StringBuilder();
-            int HttpResult = request.getResponseCode();
-            if (HttpResult == HttpURLConnection.HTTP_OK) {
+            int httpResult = request.getResponseCode();
+            if (httpResult == HttpURLConnection.HTTP_OK) {
                 InputStreamReader inStream = null;
                 String contentEncoding = request.getContentEncoding();
                 if (contentEncoding != null
                         && contentEncoding.toLowerCase(Locale.getDefault())
-                        .contains("gzip") == true) {
+                        .contains("gzip")) {
                     inStream = new InputStreamReader(new GZIPInputStream(
                             request.getInputStream()), "windows-1251");
                 } else {
@@ -1119,22 +1169,196 @@ public class EpicWarBot {
         return responseData;
     }
 
-    boolean ItIsARedirect(int retStatusCode) {
+    /**
+     * set up url connection.
+     *
+     * @param request     http url connection
+     * @param postString  post string
+     * @param typePostGet type - "POST" or "GET"
+     * @param header      headers data
+     * @param flJSON      is json
+     * @param flForm      is form
+     * @param cm          cookie manager
+     * @throws ProtocolException setRequestMethod exception
+     */
+    private static void setUrlConnection(final HttpURLConnection request,
+                                         final String postString,
+                                         final String typePostGet,
+                                         final HashMap<String, String> header,
+                                         final boolean flJSON,
+                                         final boolean flForm,
+                                         final CookieManager cm)
+            throws ProtocolException {
+        final int connectTimeout = 1000;
+        final int readTimeout = 15000;
+
+        // Log.d(LOG_TAG, "Using proxy: " + request.usingProxy());
+        request.setDoOutput(true);
+        if (typePostGet.toLowerCase(Locale.getDefault())
+                .contentEquals("post")) {
+            request.setDoInput(true);
+        }
+        request.setConnectTimeout(connectTimeout);
+        request.setReadTimeout(readTimeout);
+        if (typePostGet.toLowerCase(Locale.getDefault()) == "post") {
+            request.addRequestProperty("Content-Length",
+                    Integer.toString(postString.length()));
+        }
+        request.setRequestMethod(typePostGet);
+
+        request.addRequestProperty(
+                "User-Agent",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) "
+                        + "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        + "Chrome/39.0.2171.95 "
+                        + "Safari/537.36 OPR/26.0.1656.60");
+        request.addRequestProperty("Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                        + "image/webp,*/*;q=0.8");
+        request.addRequestProperty("Accept-Encoding",
+                "gzip, deflate, lzma, sdch");
+        request.addRequestProperty("Accept-Language", "en-US,en;q=0.8");
+        if (flJSON) {
+            request.addRequestProperty("content-type",
+                    "application/json; charset=UTF-8");
+            // request.addRequestProperty("Accept", "application/json");
+        }
+        if (flForm) {
+            request.addRequestProperty("content-type",
+                    "application/x-www-form-urlencoded");
+        }
+        if (header != null) {
+            for (Entry<String, String> cVal : header.entrySet()) {
+                request.addRequestProperty(cVal.getKey(), cVal.getValue());
+            }
+        }
+        if (cm.getCookieStore().getCookies().size() > 0) {
+            request.setRequestProperty(
+                    "Cookie",
+                    joinCookie(";", cm.getCookieStore()
+                            .getCookies()));
+        }
+    }
+
+    /**
+     * auto redirect http query.
+     *
+     * @param urlString url
+     * @param cm        cookie manager
+     * @param rqt       http url connection
+     * @return http url connection
+     * @throws IOException http connect error
+     */
+    private static HttpURLConnection aRedirect(final String urlString,
+                                               final CookieManager cm,
+                                               final HttpURLConnection rqt)
+            throws IOException {
+        final int connectTimeout = 1000;
+        final int readTimeout = 15000;
+        //ReturnData responseData = new ReturnData();
+        int httpResult;
+        String currLocation;
+        String currUrl = urlString;
+        URL baseURL;
+        URL nextURL;
+        HttpURLConnection request = rqt;
+        while (true) {
+            httpResult = request.getResponseCode();
+            Map<String, List<String>> headerFields = request
+                    .getHeaderFields();
+            List<String> cookiesHeader = headerFields
+                    .get(COOKIES_HEADER);
+
+            if (cookiesHeader != null) {
+                for (String cookie : cookiesHeader) {
+                    cm.getCookieStore().add(null,
+                            HttpCookie.parse(cookie).get(0));
+                }
+            }
+            switch (httpResult) {
+                case HttpURLConnection.HTTP_MOVED_PERM:
+                case HttpURLConnection.HTTP_MOVED_TEMP:
+                case HttpURLConnection.HTTP_SEE_OTHER:
+                    currLocation = request.getHeaderField("Location");
+                    baseURL = new URL(currUrl);
+                    nextURL = new URL(baseURL, currLocation);
+
+                    currUrl = nextURL.toExternalForm();
+                    if (mUseProxy && mProxy != null) {
+                        request = (HttpURLConnection) nextURL
+                                .openConnection(mProxy);
+                    } else {
+                        request = (HttpURLConnection) nextURL
+                                .openConnection();
+                    }
+                    request.addRequestProperty(
+                            "User-Agent",
+                            "Mozilla/5.0 (Macintosh; Intel Mac OS X "
+                                    + "10_10_2) AppleWebKit/537.36 (KHTML, "
+                                    + "like Gecko) Chrome/"
+                                    + "39.0.2171.95 Safari"
+                                    + "/537.36 OPR/26.0.1656.60");
+                    request.addRequestProperty("Accept",
+                            "text/html,application/xhtml+xml,application/"
+                                    + "xml;q=0.9,image/webp,*/*;q=0.8");
+                    request.addRequestProperty("Accept-Encoding",
+                            "gzip, deflate, lzma, sdch");
+                    request.addRequestProperty("Accept-Language",
+                            "en-US,en;q=0.8");
+                    if (cm.getCookieStore().
+                            getCookies().size() > 0) {
+                        request.setRequestProperty(
+                                "Cookie",
+                                joinCookie(";", cm
+                                        .getCookieStore()
+                                        .getCookies()));
+                    }
+                    request.setConnectTimeout(connectTimeout);
+                    request.setReadTimeout(readTimeout);
+                    request.setInstanceFollowRedirects(false);
+                    continue;
+                default:
+                    break;
+            }
+
+            break;
+        }
+
+        return request;
+    }
+
+    /**
+     * check status on redirect.
+     *
+     * @param retStatusCode status
+     * @return true - it's a redirect
+     */
+    private static boolean itIsARedirect(final int retStatusCode) {
         boolean redirect = false;
 
         int status = retStatusCode;
         if (status != HttpURLConnection.HTTP_OK) {
             if (status == HttpURLConnection.HTTP_MOVED_TEMP
                     || status == HttpURLConnection.HTTP_MOVED_PERM
-                    || status == HttpURLConnection.HTTP_SEE_OTHER)
+                    || status == HttpURLConnection.HTTP_SEE_OTHER) {
                 redirect = true;
+            }
         }
 
         return redirect;
     }
 
-    static public HashMap<String, String> FindPairsInText(String inputText,
-                                                          String patternBlockStr, String patternPairStr) {
+    /**
+     * get pairs from http response.
+     *
+     * @param inputText       http response text
+     * @param patternBlockStr pattern for block
+     * @param patternPairStr  pattern for pairs
+     * @return map of paris
+     */
+    public static HashMap<String, String> findPairsInText(
+            final String inputText,
+            final String patternBlockStr, final String patternPairStr) {
         HashMap<String, String> retPairs = new HashMap<String, String>();
         final Pattern patternBlock = Pattern.compile(patternBlockStr,
                 Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
@@ -1153,22 +1377,37 @@ public class EpicWarBot {
         return retPairs;
     }
 
-    static public String Base36FromInt(long value) {
+    /**
+     * convert from long to base36 string format.
+     *
+     * @param value value to convert
+     * @return string in base 36 format
+     */
+    public static String base36FromInt(final long value) {
         String base36 = "0123456789abcdefghijklmnopqrstuvwxyz";
-
+        long locValue = value;
+        final long lengthBase = 36;
         String returnValue = "";
         do {
             int x = 0;
-            x = (int) (value % ((long) base36.length()));
+            x = (int) (locValue % ((long) base36.length()));
             char y = base36.charAt(x);
             returnValue = y + returnValue;
-            value = value / 36;
-        } while (value != 0);
+            locValue = locValue / lengthBase;
+        } while (locValue != 0);
 
         return returnValue;
     }
 
-    private static String md5(String s) {
+    /**
+     * generate md5 from string.
+     *
+     * @param s input string
+     * @return md5 string
+     */
+    public static String md5(final String s) {
+        final int lenMax = 32;
+        final int valHex = 16;
         MessageDigest m;
         try {
             m = MessageDigest.getInstance("MD5");
@@ -1180,75 +1419,109 @@ public class EpicWarBot {
         m.update(s.getBytes());
         byte[] digest = m.digest();
         BigInteger bigInt = new BigInteger(1, digest);
-        String hashtext = bigInt.toString(16);
+        String hashText = bigInt.toString(valHex);
         // Now we need to zero pad it if you actually want the full 32 chars.
-        while (hashtext.length() < 32) {
-            hashtext = "0" + hashtext;
+        while (hashText.length() < lenMax) {
+            hashText = "0" + hashText;
         }
-        return hashtext;
+        return hashText;
     }
 
-    public static String createFingerprint(HashMap<String, String> param1) {
-        final Map<String, String> _loc_3 = new TreeMap<String, String>(
+    /**
+     * create fingerprint to game.
+     *
+     * @param param1 param
+     * @return fingerprint
+     */
+    public static String createFingerprint(
+            final HashMap<String, String> param1) {
+        final int startIndexXEnv = 6;
+        final Map<String, String> loc3 = new TreeMap<String, String>(
                 new Comparator<String>() {
                     @Override
-                    public int compare(String lhs, String rhs) {
+                    public int compare(final String lhs,
+                                       final String rhs) {
                         return lhs.compareTo(rhs);
                     }
                 });
-        // HashMap<String, String> _loc_3 = new HashMap<String, String>();
-        String _loc_4 = "";
+        // HashMap<String, String> loc3 = new HashMap<String, String>();
+        String loc4 = "";
         for (Entry<String, String> cvl : param1.entrySet()) {
-            String _loc_6_key = cvl.getKey();
-            String _loc_6_val = cvl.getValue();
-            if (_loc_6_key.contains("X-Env") == true) {
-                int index = 6;
-                String _loc_2 = _loc_6_key.substring(index).toUpperCase(
+            String loc6key = cvl.getKey();
+            String loc6val = cvl.getValue();
+            if (loc6key.contains("X-Env")) {
+                int index = startIndexXEnv;
+                String loc2 = loc6key.substring(index).toUpperCase(
                         Locale.getDefault());
-                _loc_3.put(_loc_2, _loc_6_val);
+                loc3.put(loc2, loc6val);
             }
         }
 
-        for (Entry<String, String> cvl : _loc_3.entrySet()) {
-            String _loc_6_key = cvl.getKey();
-            String _loc_6_val = cvl.getValue();
-            _loc_4 = _loc_4 + (_loc_6_key + "=" + _loc_6_val);
+        for (Entry<String, String> cvl : loc3.entrySet()) {
+            String loc6key = cvl.getKey();
+            String loc6val = cvl.getValue();
+            loc4 = loc4 + (loc6key + "=" + loc6val);
         }
-        return _loc_4;
+        return loc4;
     }
 
-    public static String StrPad(String param1, int param2, String param3,
-                                int param4) {
-        if (param3 == null) {
-            param3 = " ";
+    /**
+     * str pad from flash.
+     *
+     * @param param1 param 1
+     * @param param2 param 2
+     * @param param3 param 3
+     * @param param4 param 4
+     * @return string pad
+     */
+    public static String strPad(final String param1,
+                                final int param2,
+                                final String param3,
+                                final int param4) {
+        String locParam1 = param1;
+        String locParam3 = param3;
+        int locParam4 = param4;
+        if (locParam3 == null) {
+            locParam3 = " ";
         }
-        if (param4 == 0) {
-            param4 = 1;
+        if (locParam4 == 0) {
+            locParam4 = 1;
         }
-        int _loc_6 = param4 & 1;
-        int _loc_5 = param4 & 2;
+        int loc6 = locParam4 & 1;
+        int loc5 = locParam4 & 2;
 
-        if (param3.length() > 1) {
-            char firstChar = param3.charAt(0);
-            param3 = "" + firstChar;
+        if (locParam3.length() > 1) {
+            char firstChar = locParam3.charAt(0);
+            locParam3 = "" + firstChar;
         } else {
-            param3 = param3.length() == 0 ? " " : param3;
+            if (locParam3.length() == 0) {
+                locParam3 = " ";
+            }
         }
-        if (_loc_6 > 0 || _loc_5 > 0) {
-            while (param1.length() < param2) {
-                if (_loc_6 > 0) {
-                    param1 = param3 + param1;
+        if (loc6 > 0 || loc5 > 0) {
+            while (locParam1.length() < param2) {
+                if (loc6 > 0) {
+                    locParam1 = locParam3 + locParam1;
                 }
-                if (param1.length() < param2 && _loc_5 > 0) {
-                    param1 = param1 + param3;
+                if (locParam1.length() < param2 && loc5 > 0) {
+                    locParam1 = locParam1 + locParam3;
                 }
             }
         }
-        return param1;
+        return locParam1;
     }
 
-    public static String ChangeDateFormat(String dateString, String inFormat,
-                                          String outFormat) {
+    /**
+     * change date format.
+     *
+     * @param dateString date string
+     * @param inFormat   input format of string
+     * @param outFormat  output format of string
+     * @return date in new format
+     */
+    public static String changeDateFormat(final String dateString,
+                                          final String inFormat,
+                                          final String outFormat) {
         SimpleDateFormat dateStringFormatter = new SimpleDateFormat(inFormat,
                 Locale.getDefault());
         Calendar currDate = new GregorianCalendar();
@@ -1264,28 +1537,44 @@ public class EpicWarBot {
         return "";
     }
 
-    private String createAuthSignature(HashMap<String, Object> inData) {
+    /**
+     * generate auth signature to game.
+     *
+     * @param inData input data
+     * @return auth signature
+     */
+    private String createAuthSignature(
+            final HashMap<String, Object> inData) {
         String postString = "";
         if (inData != null) {
             JSONObject currJsonData = new JSONObject(inData);
             postString = currJsonData.toString();
         }
-        String _loc_3 = "";
-        _loc_3 += mSessionHeaderX.get("X-Request-Id");
-        _loc_3 += ":";
-        _loc_3 += mAuthKey;
-        _loc_3 += ":";
-        _loc_3 += mSessionHeaderX.get("X-Auth-Session-Id");
-        _loc_3 += ":";
-        _loc_3 += postString;
-        _loc_3 += ":";
-        _loc_3 += createFingerprint(mSessionHeaderX);
+        String loc3 = "";
+        loc3 += mSessionHeaderX.get("X-Request-Id");
+        loc3 += ":";
+        loc3 += mAuthKey;
+        loc3 += ":";
+        loc3 += mSessionHeaderX.get("X-Auth-Session-Id");
+        loc3 += ":";
+        loc3 += postString;
+        loc3 += ":";
+        loc3 += createFingerprint(mSessionHeaderX);
 
-        return md5(_loc_3);
+        return md5(loc3);
     }
 
-    public static String CreateSig(String vkId,
-                                   HashMap<String, Object> sendData, String vkSecret) {
+    /**
+     * create sig.
+     *
+     * @param vkId     vk id
+     * @param sendData send data
+     * @param vkSecret vk secret key
+     * @return sig string
+     */
+    public static String createSig(final String vkId,
+                                   final HashMap<String, Object> sendData,
+                                   final String vkSecret) {
         String currSig = vkId;
         TreeMap<String, String> cSendData = new TreeMap<String, String>();
         for (Entry<String, Object> inCKeyVal : sendData.entrySet()) {
@@ -1296,7 +1585,7 @@ public class EpicWarBot {
 
         for (Entry<String, String> inCKeyVal : cSendData.entrySet()) {
             String currKey = inCKeyVal.getKey();
-            if (currKey == "sid" || currKey == "sig") {
+            if (currKey.equals("sid") || currKey.equals("sig")) {
                 continue;
             }
             String currVal = inCKeyVal.getValue();
@@ -1308,40 +1597,65 @@ public class EpicWarBot {
         return currSig;
     }
 
+    /**
+     * generate session key.
+     *
+     * @return session key
+     */
     private String generateSessionKey() {
+        final long msInSecond = 1000L;
+        final long maxInt = 4294967295L; // 2^32 − 1
+        final int param2 = 7;
         Calendar currDate = Calendar.getInstance();
-        int _loc_4 = (int) (currDate.getTimeInMillis() / 1000L);
-        long _loc_5 = _loc_4 & 4294967295L;
-        Random gen_rand = new Random();
-        long _loc_2 = (gen_rand.nextLong() % 4294967295L) + 4294967294L;
-        String _loc_1 = Base36FromInt(_loc_5);
-        String _loc_3 = Base36FromInt(_loc_2);
-        String sessionKey = StrPad(_loc_1, 7, "0", 1)
-                + StrPad(_loc_3, 7, "0", 1);
+        int loc4 = (int) (currDate.getTimeInMillis() / msInSecond);
+        long loc5 = loc4 & maxInt;
+        Random genRand = new Random();
+        long loc2 = (genRand.nextLong() % maxInt) + maxInt;
+        String loc1 = base36FromInt(loc5);
+        String loc3 = base36FromInt(loc2);
 
-        return sessionKey;
+        return strPad(loc1, param2, "0", 1) + strPad(loc3, param2, "0", 1);
     }
 
-    public static String GetCurrTimeStr() {
+    /**
+     * get curr time in string format.
+     *
+     * @return curr time string
+     */
+    public static String getCurrTimeStr() {
+        final long msInSecond = 1000L;
         Calendar currDate = Calendar.getInstance();
-        int currTime = (int) (currDate.getTimeInMillis() / 1000L);
-        String retStr = String.valueOf(currTime);
+        int currTime = (int) (currDate.getTimeInMillis() / msInSecond);
 
-        return retStr;
+        return String.valueOf(currTime);
     }
 
-    public static String GetRnd() {
-        Random gen_rand = new Random();
-        int curr_rnd = gen_rand.nextInt(10000);
+    /**
+     * get random to 10000.
+     *
+     * @return random in string format
+     */
+    public static String getRnd() {
+        final int maxValue = 10000;
+        Random genRand = new Random();
+        int currRnd = genRand.nextInt(maxValue);
 
-        return String.valueOf(curr_rnd);
+        return String.valueOf(currRnd);
     }
 
-    public static String JoinCookie(CharSequence delimiter,
-                                    List<HttpCookie> list) {
+    /**
+     * join cookie to string.
+     *
+     * @param delimiter  delimiter for pairs
+     * @param listCookie list of cookie
+     * @return string cookies
+     */
+    public static String joinCookie(
+            final CharSequence delimiter,
+            final List<HttpCookie> listCookie) {
         StringBuilder sb = new StringBuilder();
         boolean firstTime = true;
-        for (Object token : list) {
+        for (Object token : listCookie) {
             if (firstTime) {
                 firstTime = false;
             } else {
@@ -1352,11 +1666,19 @@ public class EpicWarBot {
         return sb.toString();
     }
 
-    private ReturnData SendRecv(HashMap<String, Object> sendData) {
+    /**
+     * send data.
+     *
+     * @param sendData data to send
+     * @return return data
+     */
+    private ReturnData sendReceive(
+            final HashMap<String, Object> sendData) {
         if (mRequestId == 1) {
             mSessionHeaderX.put("X-Auth-Session-Init", "1"); // only for first
         }
-        mSessionHeaderX.put("X-Request-Id", String.valueOf(mRequestId)); // increase
+        mSessionHeaderX.put("X-Request-Id",
+                String.valueOf(mRequestId)); // increase
         // it
         // after
         // each
@@ -1365,7 +1687,7 @@ public class EpicWarBot {
         // 2,
         // 3...
         mSessionHeaderX.put("X-Auth-Signature", createAuthSignature(sendData));
-        ReturnData retDict = GetPost(mSite, "POST", sendData,
+        ReturnData retDict = getPost(mSite, "POST", sendData,
                 mSessionHeaderX, mCookieManager, true, false);
         if (mRequestId == 1) {
             mSessionHeaderX.remove("X-Auth-Session-Init");
@@ -1375,22 +1697,37 @@ public class EpicWarBot {
         return retDict;
     }
 
-    public static String ToJsonString(String str) {
+    /**
+     * to json string.
+     *
+     * @param str input string
+     * @return json string
+     */
+    public static String toJsonString(final String str) {
         if (str == null) {
             return "";
         }
         return "" + str + "";
     }
 
-    public static HashMap<String, Object> GenCall(String ident,
-                                                  HashMap<String, Object> args, String name) {
-        HashMap<String, Object> retMap = new HashMap<String, Object>();
-        retMap.put("ident", ToJsonString(ident));
+    /**
+     * generate call to json.
+     *
+     * @param ident ident
+     * @param args  args
+     * @param name  name
+     * @return map call
+     */
+    public static HashMap<String, Object> genCall(
+            final String ident,
+            final HashMap<String, Object> args, final String name) {
+        HashMap<String, Object> retMap = new HashMap<>();
+        retMap.put("ident", toJsonString(ident));
         retMap.put("args", args);
         if (name == null) {
-            retMap.put("name", ToJsonString(ident));
+            retMap.put("name", toJsonString(ident));
         } else {
-            retMap.put("name", ToJsonString(name));
+            retMap.put("name", toJsonString(name));
         }
 
         return retMap;
