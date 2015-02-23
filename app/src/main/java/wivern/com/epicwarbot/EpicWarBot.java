@@ -307,6 +307,14 @@ public class EpicWarBot {
      * read timeout.
      */
     private static int mReadTimeout;
+    /**
+     * vk login.
+     */
+    private String mVkLogin;
+    /**
+     * vk pass.
+     */
+    private String mVkPassword;
 
     /**
      * default constructor.
@@ -374,6 +382,17 @@ public class EpicWarBot {
      */
     public static void setProxy(final String ip, final int port) {
         mProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ip, port));
+    }
+
+    /**
+     * set vk login and pass.
+     *
+     * @param login login
+     * @param pass  password
+     */
+    public final void setVkLoginAndPass(final String login, final String pass) {
+        mVkLogin = login;
+        mVkPassword = pass;
     }
 
     /**

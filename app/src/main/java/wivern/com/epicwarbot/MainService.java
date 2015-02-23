@@ -18,6 +18,10 @@ import java.util.TimerTask;
  */
 public class MainService extends Service {
     /**
+     * main bot object.
+     */
+    private EpicWarBot mEpicBot;
+    /**
      * tag for log.
      */
     private static final String LOG_TAG = "BotService";
@@ -43,9 +47,18 @@ public class MainService extends Service {
      */
     public final void onCreate() {
         super.onCreate();
-        Log.d(LOG_TAG, "MainService onCreate");
+        Log.d(LOG_TAG, "IN onCreate");
         //mTimer = new Timer();
         //schedule();
+    }
+
+    /**
+     * on destroy service.
+     */
+    @Override
+    public final void onDestroy() {
+        super.onDestroy();
+        Log.d(LOG_TAG, "IN onDestroy");
     }
 
     /**
@@ -65,6 +78,7 @@ public class MainService extends Service {
 
         @Override
         public void connect(final IBotServiceCallback listener) {
+            Log.d(LOG_TAG, "IN connect");
             try {
                 listener.onConnectedResult("test result");
             } catch (RemoteException e) {
@@ -75,7 +89,12 @@ public class MainService extends Service {
         @Override
         public void setVKLoginAndPass(final String login,
                                       final String password) {
+            mEpicBot.setVkLoginAndPass(login, password);
+        }
 
+        @Override
+        public String getVKLoginAndPass(){
+            return null;
         }
     };
 

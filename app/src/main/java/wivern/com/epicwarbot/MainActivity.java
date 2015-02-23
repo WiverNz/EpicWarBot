@@ -1,8 +1,10 @@
 package wivern.com.epicwarbot;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -69,7 +71,10 @@ public class MainActivity extends Activity
      * intent for service.
      */
     private Intent mIntent;
-
+    /**
+     * service connection.
+     */
+    private ServiceConnection mBotServiceConnection;
     /**
      * on create activity.
      *
@@ -121,17 +126,23 @@ public class MainActivity extends Activity
         connectToService();
     }
 
+    @Override
+    protected final void onDestroy() {
+        super.onDestroy();
+        if (mBound) {
+            unbindService(mBotServiceConnection);
+            mBound = false;
+        }
+    }
+
     /**
      * Connect to service.
      *
      * @return is bound (boolean)
      */
     protected final boolean connectToService() {
-        /**
-         * service connection.
-         */
-        ServiceConnection botServiceConnection;
-        botServiceConnection = new ServiceConnection() {
+
+        mBotServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(final ComponentName name,
                                            final IBinder service) {
@@ -155,6 +166,11 @@ public class MainActivity extends Activity
                 Log.d(LOG_TAG, "Service connected");
             }
 
+            /**
+             * onServiceDisconnected is only called in extreme situations.
+             * (crashed / killed)
+             * @param name component name
+             */
             @Override
             public void onServiceDisconnected(final ComponentName name) {
                 mServiceApi = null;
@@ -163,10 +179,12 @@ public class MainActivity extends Activity
                 Log.d(LOG_TAG, "Service disconnected");
             }
         };
-        if (mBound) {
+        if (!mBound) {
             // binding to remote service
-            bindService(mIntent, botServiceConnection,
-                    Service.BIND_AUTO_CREATE);
+            if (isServiceRunning(MainService.class)) {
+                bindService(mIntent, mBotServiceConnection,
+                        Service.BIND_AUTO_CREATE);
+            }
         }
 
         return mBound;
@@ -236,11 +254,40 @@ public class MainActivity extends Activity
 //   .SendMessage(LooperThread.MSG_ID_DISCONNECT, null);
 //                }
                 break;
+            case R.id.btnStartService:
+                if (!mBound) {
+                    startService(mIntent);
+                    connectToService();
+                }
+
+                break;
+            case R.id.btnStopService:
+                if (mBound) {
+                    unbindService(mBotServiceConnection);
+                    mBound = false;
+                }
+                stopService(mIntent);
+                break;
             default:
                 break;
         }
     }
-
+    /**
+     * check that service is running.
+     * @param serviceClass service to check
+     * @return true - started
+     */
+    public final boolean isServiceRunning(final Class<?> serviceClass) {
+        ActivityManager manager =
+                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service
+                :manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * @since 1.0
      * handler class

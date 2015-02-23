@@ -1,13 +1,16 @@
 
 package wivern.com.epicwarbot;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.HashMap;
 
 /**
  * @since 1.0
  * answer info structure
  */
-public class AnswerInfo {
+public class AnswerInfo implements Parcelable {
     /**
      * information.
      */
@@ -37,7 +40,7 @@ public class AnswerInfo {
         szStatus = "";
         bError = false;
         szErrorMsg = "";
-        hmRetValues = new HashMap<String, String>();
+        hmRetValues = new HashMap<>();
     }
 
     /**
@@ -49,7 +52,7 @@ public class AnswerInfo {
      */
     AnswerInfo(final String info, final String status, final boolean error,
                final String errorMsg) {
-        hmRetValues = new HashMap<String, String>();
+        hmRetValues = new HashMap<>();
         set(info, status, error, errorMsg);
     }
 
@@ -76,4 +79,54 @@ public class AnswerInfo {
     public final void addValue(final String key, final String value) {
         hmRetValues.put(key, value);
     }
+
+    /**
+     * describe contents.
+     * @return 0
+     */
+    @Override
+    public final int describeContents() {
+        return 0;
+    }
+
+    /**
+     * write to parcel.
+     * @param dest parcel
+     * @param flags flags
+     */
+    @Override
+    public final void writeToParcel(final Parcel dest, final int flags) {
+
+    }
+
+    /**
+     * read from parcel.
+     * @param in parcel
+     */
+    public final void readFromParcel(final Parcel in) {
+
+    }
+    /**
+     * constructor from parcel.
+     * @param source parcel
+     */
+    AnswerInfo(final Parcel source) {
+        readFromParcel(source);
+    }
+
+    /**
+     * creator from parcel.
+     */
+    public static final Parcelable.Creator<AnswerInfo> CREATOR = new
+            Parcelable.Creator<AnswerInfo>() {
+                @Override
+                public AnswerInfo createFromParcel(final Parcel source) {
+                    return new AnswerInfo(source);
+                }
+
+                @Override
+                public AnswerInfo[] newArray(final int size) {
+                    return new AnswerInfo[size];
+                }
+            };
 }

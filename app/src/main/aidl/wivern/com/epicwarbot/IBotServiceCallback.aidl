@@ -1,6 +1,7 @@
 // IBotServiceCallback.aidl
 package wivern.com.epicwarbot;
 
+//import wivern.com.epicwarbot.IAnswerInfo;
 // Declare any non-default types here with import statements
 
 interface IBotServiceCallback {
