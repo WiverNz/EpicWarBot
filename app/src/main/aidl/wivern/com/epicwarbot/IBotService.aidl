@@ -11,10 +11,14 @@ interface IBotService {
      * and return values in AIDL.
      */
     //void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString);
-    // connect to game (async)
-    oneway void connect(in IBotServiceCallback listener);
+    // add callback listener to service (sync)
+    void addCallback(in IBotServiceCallback listener);
+    // remove callback listener from service (sync)
+    void removeCallback(in IBotServiceCallback listener);
+    // do all bot task (async)
+    oneway void doAllTask();
     // set game login and pass (sync)
     void setVKLoginAndPass(in String login, in String password);
-    // get game login and pass (when recreate activity) (sync)
-    AnswerInfo getVKLoginAndPass();
+    // get service variables (when recreate activity) (sync)
+    AnswerInfo getServiceVariables();
 }

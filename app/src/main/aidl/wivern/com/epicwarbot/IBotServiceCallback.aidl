@@ -10,5 +10,5 @@ interface IBotServiceCallback {
      * and return values in AIDL.
      */
     //void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString);
-    oneway void onConnectedResult(in AnswerInfo result);
+    oneway void onTaskResult(in AnswerInfo result);
 }

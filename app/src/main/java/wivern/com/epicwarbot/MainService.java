@@ -6,6 +6,8 @@ package wivern.com.epicwarbot;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.os.RemoteCallbackList;
+//import android.os.RemoteException;
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -26,6 +28,11 @@ public class MainService extends Service {
      */
     private static final String LOG_TAG = "BotService";
     /**
+     * callbacks for report answer info to all connected main activity.
+     */
+    private final RemoteCallbackList<IBotServiceCallback> mCallbacks
+            = new RemoteCallbackList<>();
+    /**
      * main timer.
      */
     private Timer mTimer;
@@ -41,7 +48,23 @@ public class MainService extends Service {
      * interval for timer.
      */
     private long mInterval = mDefInterval;
+    /**
+     * vk login.
+     */
+    private String mVkLogin;
+    /**
+     * vk pass.
+     */
+    private String mVkPassword;
 
+    /**
+     * need to collect resources.
+     */
+    private boolean mFlagCollectResources;
+    /**
+     * need to send/receive gifts.
+     */
+    private boolean mFlagSendReceiveGifts;
     /**
      * on create service.
      */
@@ -77,31 +100,66 @@ public class MainService extends Service {
         }
 
         @Override
-        public void connect(final IBotServiceCallback listener) {
-            Log.d(LOG_TAG, "IN connect");
-            try {
-                AnswerInfo ai = new AnswerInfo();
-                ai.set("test result2", "statusm", true, "not init");
-                listener.onConnectedResult(ai);
-            } catch (RemoteException e) {
-                Log.d(LOG_TAG, "onConnectedResult exception: " + e.toString());
-            }
+        public void addCallback(final IBotServiceCallback listener) {
+            mCallbacks.register(listener);
+        }
+
+        @Override
+        public void removeCallback(final IBotServiceCallback listener) {
+            mCallbacks.unregister(listener);
+        }
+
+        @Override
+        public void doAllTask() {
+            doAllBotTask();
         }
 
         @Override
         public void setVKLoginAndPass(final String login,
                                       final String password) {
-            mEpicBot.setVkLoginAndPass(login, password);
+            mVkLogin = login;
+            mVkPassword = password;
         }
 
         @Override
-        public AnswerInfo getVKLoginAndPass() {
+        public AnswerInfo getServiceVariables() {
             AnswerInfo ai = new AnswerInfo();
             ai.set("infom", "statusm", true, "not init");
             return ai;
         }
     };
 
+    /**
+     * do all bot task.
+     */
+    private void doAllBotTask() {
+        Log.d(LOG_TAG, "IN doAllBotTask");
+        //try {
+            AnswerInfo ai = new AnswerInfo();
+            ai.set("test result2", "statusm", true, "not init");
+        sendAnswerToClients(ai);
+            //listener.onTaskResult(ai);
+       // } catch (RemoteException e) {
+        //    Log.d(LOG_TAG, "onConnectedResult exception: " + e.toString());
+       // }
+    }
+
+    /**
+     * send answer to all clients.
+     * @param ai answer info
+     */
+    private void sendAnswerToClients(final AnswerInfo ai) {
+        int n = mCallbacks.beginBroadcast();
+
+        for (int i = 0; i < n; i++) {
+            try {
+                mCallbacks.getBroadcastItem(i).onTaskResult(ai);
+            } catch (RemoteException e) {
+                Log.d(LOG_TAG, "onTaskResult error: " + e.toString());
+            }
+        }
+        mCallbacks.finishBroadcast();
+    }
     /**
      * on bind.
      *

@@ -76,6 +76,10 @@ public class MainActivity extends Activity
      */
     private ServiceConnection mBotServiceConnection;
     /**
+     * on start service - true.
+     */
+    private boolean mStartService;
+    /**
      * on create activity.
      *
      * @param savedInstanceState state
@@ -126,12 +130,29 @@ public class MainActivity extends Activity
         connectToService();
     }
 
+    /**
+     * on destroy activity.
+     */
     @Override
     protected final void onDestroy() {
         super.onDestroy();
+        disconnectFromService();
+    }
+
+    /**
+     * unbind from service.
+     */
+    private void disconnectFromService() {
         if (mBound) {
+            try {
+                mServiceApi.removeCallback(mServiceCallback);
+            } catch (RemoteException e) {
+                Log.d(LOG_TAG, "removeCallback error: " + e.toString());
+            }
             unbindService(mBotServiceConnection);
             mBound = false;
+            mServiceApi = null;
+            mServiceCallback = null;
         }
     }
 
@@ -153,7 +174,7 @@ public class MainActivity extends Activity
                      * @param result string with result
                      */
                     @Override
-                    public void onConnectedResult(final AnswerInfo result) {
+                    public void onTaskResult(final AnswerInfo result) {
                         Message msg = new Message();
                         msg.what = 1;
                         Bundle sendData = new Bundle();
@@ -162,8 +183,15 @@ public class MainActivity extends Activity
                         mHandler.sendMessage(msg);
                     }
                 };
+                try {
+                    mServiceApi.addCallback(mServiceCallback);
+                } catch (RemoteException e) {
+                    Log.d(LOG_TAG, "addCallback error: " + e.toString());
+                }
                 mBound = true;
-                setServiceParams();
+                if (!mStartService) {
+                    setParamsFromService();
+                }
                 Log.d(LOG_TAG, "Service connected");
             }
 
@@ -188,27 +216,29 @@ public class MainActivity extends Activity
             }
         }
 
+        mStartService = false;
+
         return mBound;
     }
 
     /**
      * set params from service to main activity.
      */
-    private void setServiceParams() {
+    private void setParamsFromService() {
         Log.d(LOG_TAG, "IN setServiceParams");
         if (!mBound) {
             return;
         }
         AnswerInfo ai;
         try {
-            ai = mServiceApi.getVKLoginAndPass();
+            ai = mServiceApi.getServiceVariables();
             if (ai != null) {
-                Log.d(LOG_TAG, "getVKLoginAndPass result: " + ai.getSzInfo());
+                Log.d(LOG_TAG, "getServiceVariables result: " + ai.getSzInfo());
             } else {
-                Log.d(LOG_TAG, "getVKLoginAndPass result: null");
+                Log.d(LOG_TAG, "getServiceVariables result: null");
             }
         } catch (RemoteException e) {
-            Log.d(LOG_TAG, "getVKLoginAndPass error: " + e.toString());
+            Log.d(LOG_TAG, "getServiceVariables error: " + e.toString());
         }
 
     }
@@ -258,7 +288,7 @@ public class MainActivity extends Activity
             case R.id.btnConnect:
                 if (mBound) {
                     try {
-                        mServiceApi.connect(mServiceCallback);
+                        mServiceApi.doAllTask();
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -279,18 +309,14 @@ public class MainActivity extends Activity
                 break;
             case R.id.btnStartService:
                 if (!mBound) {
+                    mStartService = true;
                     startService(mIntent);
                     connectToService();
                 }
 
                 break;
             case R.id.btnStopService:
-                if (mBound) {
-                    unbindService(mBotServiceConnection);
-                    mBound = false;
-                    mServiceApi = null;
-                    mServiceCallback = null;
-                }
+                disconnectFromService();
                 stopService(mIntent);
                 break;
             default:

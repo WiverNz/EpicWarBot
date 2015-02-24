@@ -103,6 +103,14 @@ public class AnswerInfo implements Parcelable {
     @Override
     public final void writeToParcel(final Parcel dest, final int flags) {
         dest.writeString(szInfo);
+        dest.writeString(szStatus);
+        int intBError = 0;
+        if (bError) {
+            intBError = 1;
+        }
+        dest.writeInt(intBError);
+        dest.writeString(szErrorMsg);
+        dest.writeMap(hmRetValues);
     }
 
     /**
@@ -111,6 +119,15 @@ public class AnswerInfo implements Parcelable {
      */
     public final void readFromParcel(final Parcel in) {
         szInfo = in.readString();
+        szStatus = in.readString();
+        int intBError = in.readInt();
+        if (intBError == 0) {
+            bError = false;
+        } else {
+            bError = true;
+        }
+        szErrorMsg = in.readString();
+        hmRetValues = in.readHashMap(HashMap.class.getClassLoader());
     }
     /**
      * constructor from parcel.
