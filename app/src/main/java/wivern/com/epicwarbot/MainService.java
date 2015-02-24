@@ -80,7 +80,9 @@ public class MainService extends Service {
         public void connect(final IBotServiceCallback listener) {
             Log.d(LOG_TAG, "IN connect");
             try {
-                listener.onConnectedResult("test result");
+                AnswerInfo ai = new AnswerInfo();
+                ai.set("test result2", "statusm", true, "not init");
+                listener.onConnectedResult(ai);
             } catch (RemoteException e) {
                 Log.d(LOG_TAG, "onConnectedResult exception: " + e.toString());
             }
@@ -93,8 +95,10 @@ public class MainService extends Service {
         }
 
         @Override
-        public String getVKLoginAndPass(){
-            return null;
+        public AnswerInfo getVKLoginAndPass() {
+            AnswerInfo ai = new AnswerInfo();
+            ai.set("infom", "statusm", true, "not init");
+            return ai;
         }
     };
 

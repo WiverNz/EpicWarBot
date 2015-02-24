@@ -1,4 +1,3 @@
-
 package wivern.com.epicwarbot;
 
 import android.os.Parcel;
@@ -43,6 +42,13 @@ public class AnswerInfo implements Parcelable {
         hmRetValues = new HashMap<>();
     }
 
+    /**
+     * get szInfo.
+     * @return szInfo
+     */
+    public final String getSzInfo() {
+        return szInfo;
+    }
     /**
      * constructor with set values.
      * @param info information string
@@ -96,7 +102,7 @@ public class AnswerInfo implements Parcelable {
      */
     @Override
     public final void writeToParcel(final Parcel dest, final int flags) {
-
+        dest.writeString(szInfo);
     }
 
     /**
@@ -104,7 +110,7 @@ public class AnswerInfo implements Parcelable {
      * @param in parcel
      */
     public final void readFromParcel(final Parcel in) {
-
+        szInfo = in.readString();
     }
     /**
      * constructor from parcel.

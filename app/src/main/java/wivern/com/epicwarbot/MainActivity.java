@@ -153,16 +153,17 @@ public class MainActivity extends Activity
                      * @param result string with result
                      */
                     @Override
-                    public void onConnectedResult(final String result) {
+                    public void onConnectedResult(final AnswerInfo result) {
                         Message msg = new Message();
                         msg.what = 1;
                         Bundle sendData = new Bundle();
-                        sendData.putString("result", result);
+                        sendData.putString("result", result.getSzInfo());
                         msg.setData(sendData);
                         mHandler.sendMessage(msg);
                     }
                 };
                 mBound = true;
+                setServiceParams();
                 Log.d(LOG_TAG, "Service connected");
             }
 
@@ -188,6 +189,28 @@ public class MainActivity extends Activity
         }
 
         return mBound;
+    }
+
+    /**
+     * set params from service to main activity.
+     */
+    private void setServiceParams() {
+        Log.d(LOG_TAG, "IN setServiceParams");
+        if (!mBound) {
+            return;
+        }
+        AnswerInfo ai;
+        try {
+            ai = mServiceApi.getVKLoginAndPass();
+            if (ai != null) {
+                Log.d(LOG_TAG, "getVKLoginAndPass result: " + ai.getSzInfo());
+            } else {
+                Log.d(LOG_TAG, "getVKLoginAndPass result: null");
+            }
+        } catch (RemoteException e) {
+            Log.d(LOG_TAG, "getVKLoginAndPass error: " + e.toString());
+        }
+
     }
 
     /**
@@ -265,6 +288,8 @@ public class MainActivity extends Activity
                 if (mBound) {
                     unbindService(mBotServiceConnection);
                     mBound = false;
+                    mServiceApi = null;
+                    mServiceCallback = null;
                 }
                 stopService(mIntent);
                 break;
