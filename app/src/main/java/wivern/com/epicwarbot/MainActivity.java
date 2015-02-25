@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -108,6 +109,14 @@ public class MainActivity extends Activity
      */
     private boolean mStartService;
     /**
+     * check box "service is started".
+     */
+    private CheckBox mChbIsServiceStarted;
+    /**
+     * edit text task log.
+     */
+    private EditText mEtTasksLog;
+    /**
      * on create activity.
      *
      * @param savedInstanceState state
@@ -123,7 +132,7 @@ public class MainActivity extends Activity
         /**
          * button disconnect.
          */
-        Button btnDisconnect;
+        Button btnUpdateSettings;
         /**
          * button start service.
          */
@@ -140,14 +149,17 @@ public class MainActivity extends Activity
          * edit text field for vk password.
          */
         EditText vkPassword;
+        mChbIsServiceStarted =
+                (CheckBox) this.findViewById(R.id.chbIsServiceStarted);
         btnDoAllTasks = (Button) this.findViewById(R.id.btnDoAllTasks);
         btnDoAllTasks.setOnClickListener(this);
-        btnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
-        btnDisconnect.setOnClickListener(this);
+        btnUpdateSettings = (Button) this.findViewById(R.id.btnUpdateSettings);
+        btnUpdateSettings.setOnClickListener(this);
         btnStartService = (Button) this.findViewById(R.id.btnStartService);
         btnStartService.setOnClickListener(this);
         btnStopService = (Button) this.findViewById(R.id.btnStopService);
         btnStopService.setOnClickListener(this);
+        mEtTasksLog = (EditText) this.findViewById(R.id.etTasksLog);
         vkLogin = (EditText) this.findViewById(R.id.etVkLogin);
         vkPassword = (EditText) this.findViewById(R.id.etVkPassword);
         vkLogin.setText("13602098361");
@@ -242,8 +254,11 @@ public class MainActivity extends Activity
         if (!mBound) {
             // binding to remote service
             if (isServiceRunning(MainService.class)) {
+                mChbIsServiceStarted.setChecked(true);
                 bindService(mIntent, mBotServiceConnection,
                         Service.BIND_AUTO_CREATE);
+            } else {
+                mChbIsServiceStarted.setChecked(false);
             }
         }
 
@@ -256,6 +271,7 @@ public class MainActivity extends Activity
      */
     public final void onTaskResult(final AnswerInfo ai) {
         String result = ai.getRetValue("test");
+        mEtTasksLog.append(result + "\n");
         Toast.makeText(getApplicationContext(),
                 result, Toast.LENGTH_SHORT).show();
     }
@@ -351,7 +367,8 @@ public class MainActivity extends Activity
                     }
                 }
                 break;
-            case R.id.btnDisconnect:
+            case R.id.btnUpdateSettings:
+                setParamsToService();
                 break;
             case R.id.btnStartService:
                 if (!mBound) {

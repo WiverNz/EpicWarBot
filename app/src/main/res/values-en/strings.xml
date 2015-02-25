@@ -6,7 +6,8 @@
     <string name="VkLogin">Login:</string>
     <string name="VkPassword">Password:</string>
     <string name="btnDoAllTasks">Do all tasks</string>
-    <string name="btnDisconnect">Disconnect</string>
+    <string name="btnUpdateSettings">Update settings</string>
     <string name="btnStartService">Start service</string>
     <string name="btnStopService">Stop service</string>
+    <string name="chbIsServiceStarted">Running</string>
 </resources>

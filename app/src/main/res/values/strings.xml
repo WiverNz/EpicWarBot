@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">EpicWarBot</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="VkLogin">Login:</string>
     <string name="VkPassword">Password:</string>
     <string name="btnDoAllTasks">Do all tasks</string>
-    <string name="btnDisconnect">Disconnect</string>
+    <string name="btnUpdateSettings">Update settings</string>
     <string name="btnStartService">Start service</string>
     <string name="btnStopService">Stop service</string>
+    <string name="chbIsServiceStarted">Running</string>
 </resources>
