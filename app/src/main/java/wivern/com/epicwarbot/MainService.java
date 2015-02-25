@@ -54,9 +54,9 @@ public class MainService extends Service {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
         final int proxyPort = 8888;
-        EpicWarBot.setUseProxy(true);
-        EpicWarBot.setProxy("192.168.0.4", proxyPort);
-        EpicWarBot.testConnection();
+        //EpicWarBot.setUseProxy(true);
+        //EpicWarBot.setProxy("192.168.0.4", proxyPort);
+        //EpicWarBot.testConnection();
         mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
         //mTimer = new Timer();
@@ -138,6 +138,7 @@ public class MainService extends Service {
             ai = mEpicBot.gameConnect();
             sendAnswerToClients(ai);
             if (ai.isbError()) {
+                Log.d(LOG_TAG, "gameConnect error");
                 return;
             }
             if (mBotSettings.getFlagResources()) {

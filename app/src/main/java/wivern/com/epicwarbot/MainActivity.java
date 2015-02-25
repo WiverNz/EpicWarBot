@@ -20,7 +20,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.Toast;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+//import android.widget.Toast;
 
 /**
  * @since 1.0
@@ -278,13 +282,18 @@ public class MainActivity extends Activity
      */
     public final void onTaskResult(final AnswerInfo ai) {
         String result = ai.getSzInfo();
+        Calendar currDate = Calendar.getInstance();
+        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
+                Locale.getDefault());
+        String currTime = dateStringFormatter.format(currDate.getTime());
         if (ai.isbError()) {
-            mEtTasksLog.append(result + " " + ai.getError() + "\n");
+            mEtTasksLog.append(currTime + ": "
+                    + result + " " + ai.getError() + "\n");
         } else {
-            mEtTasksLog.append(result + "\n");
+            mEtTasksLog.append(currTime + ": " + result + "\n");
         }
-        Toast.makeText(getApplicationContext(),
-                result, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getApplicationContext(),
+        //        result, Toast.LENGTH_SHORT).show();
     }
 
     /**

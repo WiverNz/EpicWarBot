@@ -839,7 +839,7 @@ public class EpicWarBot {
                     }
                 }
                 mGameConnected = true;
-                retResult.set("Game connected!", "", true, "");
+                retResult.set("Game connected!", "", false, "");
             } catch (JSONException e) {
                 retResult.set("Not connected!", e.toString(), true,
                         "retDictFormJson parse error "
@@ -1013,6 +1013,7 @@ public class EpicWarBot {
      * @return answer info structure
      */
     public final AnswerInfo collectAllResources() {
+        Log.d(LOG_TAG, "IN collectAllResources");
         AnswerInfo retResult = new AnswerInfo();
         boolean collected = true;
 
@@ -1036,9 +1037,9 @@ public class EpicWarBot {
         }
 
         if (collected) {
-            retResult.set("All collected!", "", false, "");
+            retResult.set("All resources collected!", "", false, "");
         } else {
-            retResult.set("Error collected!", "", true, "");
+            retResult.set("Error resources collected!", "", true, "");
         }
 
         return retResult;
