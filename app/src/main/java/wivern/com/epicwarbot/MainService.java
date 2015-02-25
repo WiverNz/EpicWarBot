@@ -53,14 +53,21 @@ public class MainService extends Service {
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
-        final int proxyPort = 8888;
+        //final int proxyPort = 8888;
         //EpicWarBot.setUseProxy(true);
         //EpicWarBot.setProxy("192.168.0.4", proxyPort);
         //EpicWarBot.testConnection();
         mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
-        //mTimer = new Timer();
-        //schedule();
+        mTimer = new Timer();
+        mTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                Log.d(LOG_TAG, "IN TimerTask");
+                //doAllBotTask();
+            }
+        };
+        schedule();
     }
 
     /**
@@ -70,6 +77,10 @@ public class MainService extends Service {
     public final void onDestroy() {
         super.onDestroy();
         Log.d(LOG_TAG, "IN onDestroy");
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
     }
 
     /**
@@ -195,31 +206,16 @@ public class MainService extends Service {
     }
 
     /**
-     * @since 1.0
-     * schedule
+     * schedule for timer.
      */
-//    public final void schedule() {
-//        if (mTimerTask != null) {
-//            mTimerTask.cancel();
-//        }
-//        if (mInterval > 0) {
-//            mTimerTask = new TimerTask() {
-//                public void run() {
-//                    Log.d(LOG_TAG, "run");
-//                }
-//            };
-//            mTimer.schedule(mTimerTask, mDefInterval, mInterval);
-//        }
-//    }
-    /**
-     * @param gap step
-     * @return current interval
-     * @since 1.0
-     * up the interval
-     */
-//    public final long upInterval(final long gap) {
-//        mInterval = mInterval + gap;
-//        schedule();
-//        return mInterval;
-//    }
+    public final void schedule() {
+        Log.d(LOG_TAG, "IN schedule");
+        if (mTimerTask == null) {
+            return;
+        }
+        if (mBotSettings.getInterval() > 0) {
+            mTimer.schedule(mTimerTask, mBotSettings.getDefInterval(),
+                    mBotSettings.getInterval());
+        }
+    }
 }

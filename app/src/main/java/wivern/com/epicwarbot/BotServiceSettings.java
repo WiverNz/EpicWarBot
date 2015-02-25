@@ -123,6 +123,12 @@ public class BotServiceSettings implements Parcelable {
         mInterval = interval;
     }
     /**
+     * get default interval.
+     */
+    public final long getDefInterval() {
+        return mDefInterval;
+    }
+    /**
      * default constructor.
      */
     BotServiceSettings() {
