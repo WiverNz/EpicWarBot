@@ -40,6 +40,13 @@ public class AnswerInfo implements Parcelable {
         return bError;
     }
     /**
+     * get error message.
+     * @return error flag
+     */
+    public final String getError() {
+        return szErrorMsg;
+    }
+    /**
      * default constructor.
      */
     AnswerInfo() {

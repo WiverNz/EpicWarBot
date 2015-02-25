@@ -53,7 +53,10 @@ public class MainService extends Service {
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
+        final int proxyPort = 8888;
         mEpicBot = new EpicWarBot();
+        mEpicBot.setProxy("192.168.0.4", proxyPort);
+        mEpicBot.setUseProxy(true);
         mBotSettings = new BotServiceSettings();
         //mTimer = new Timer();
         //schedule();

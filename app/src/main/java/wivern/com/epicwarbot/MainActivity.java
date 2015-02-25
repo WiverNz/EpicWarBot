@@ -278,7 +278,11 @@ public class MainActivity extends Activity
      */
     public final void onTaskResult(final AnswerInfo ai) {
         String result = ai.getSzInfo();
-        mEtTasksLog.append(result + "\n");
+        if (ai.isbError()) {
+            mEtTasksLog.append(result + " " + ai.getError() + "\n");
+        } else {
+            mEtTasksLog.append(result + "\n");
+        }
         Toast.makeText(getApplicationContext(),
                 result, Toast.LENGTH_SHORT).show();
     }

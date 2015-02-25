@@ -404,7 +404,8 @@ public class EpicWarBot {
                 mVkId = vkPairs.get("id");
                 if (!mVkId.equals("0")) {
                     mVkConnected = true;
-                    retResult.set("Connected!", retDict.getStatus().toString(),
+                    retResult.set("VK Connected! vk id: " + mVkId,
+                            retDict.getStatus().toString(),
                             false, "");
                 } else {
                     retResult.set("Not connected!",
