@@ -1,12 +1,13 @@
 package wivern.com.epicwarbot;
 /**
- * TODO: 1) proxy (default and set)
+ * TODO: 1) proxy (default from system)
  * TODO: 2) debug in thread (breakpoints)
- * TODO: 3) static variables and methods (null)
- * TODO: 4) hashmap to json
+ * TODO: 3) hashmap to json
  */
 
 import android.util.Log;
+
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -298,21 +299,28 @@ public class EpicWarBot {
     /**
      * proxy settings.
      */
-    private static Proxy mProxy;
+    private static Proxy mProxy = null;
 
     /**
      * use auto redirect.
      */
-    private static boolean mAutoRedirect;
-
+    private static boolean mAutoRedirect = false;
+    /**
+     * default connection timeout.
+     */
+    private static final int DEFAULT_CONNECTION_TIMEOUT = 1000;
+    /**
+     * default read timeout.
+     */
+    private static final int DEFAULT_READ_TIMEOUT = 15000;
     /**
      * connection timeout.
      */
-    private static int mConnectTimeout;
+    private static int mConnectTimeout = DEFAULT_CONNECTION_TIMEOUT;
     /**
      * read timeout.
      */
-    private static int mReadTimeout;
+    private static int mReadTimeout = DEFAULT_READ_TIMEOUT;
     /**
      * default constructor.
      */
@@ -326,8 +334,6 @@ public class EpicWarBot {
      * @param constructor if true - create values
      */
     private void init(final boolean constructor) {
-        final int defaultConnectTimeout = 1000;
-        final int defaultReadTimeout = 15000;
         mVkId = "";
         mRequestId = 1;
         mAuthKey = "";
@@ -337,10 +343,6 @@ public class EpicWarBot {
         mCemetery = false;
         mVkConnected = false;
         mGameConnected = false;
-        mProxy = null;
-        mAutoRedirect = false;
-        mConnectTimeout = defaultConnectTimeout;
-        mReadTimeout = defaultReadTimeout;
         if (constructor) {
             mSessionHeaderX = new HashMap<>();
             mArrayGoldMine = new ArrayList<>();
@@ -1050,9 +1052,19 @@ public class EpicWarBot {
         Thread myThready = new Thread(new Runnable() {
             @Override
             public void run() {
+                JSONObject jReferrer = new JSONObject();
+                try {
+                    jReferrer.put("type", toJsonString("user_apps"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                HashMap<String, Object> jsonData = new HashMap<>();
+                jsonData.put("session", null);
+                jsonData.put("calls", jReferrer);
                 CookieManager cookieManager = new java.net.CookieManager();
-                getPost("http://ya.ru/", "GET", null, null,
-                        cookieManager, false, false);
+                getPost("http://ya.ru/", "POST", jsonData, null,
+                        cookieManager, true, false);
             }
         });
         myThready.start();
@@ -1077,9 +1089,6 @@ public class EpicWarBot {
                                      final CookieManager cookieManager,
                                      final boolean flJSON,
                                      final boolean flForm) {
-        System.setProperty("java.net.useSystemProxies", "false");
-        System.setProperty("http.proxyHost", "192.168.0.1");
-        System.setProperty("http.proxyPort", "7888");
         ReturnData responseData = new ReturnData();
         if (!typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post")
                 && !typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
@@ -1109,9 +1118,11 @@ public class EpicWarBot {
             }
         } else {
             if (inData != null) {
-                JSONObject json = new JSONObject(inData);
-                Log.d(LOG_TAG, "json: " + inData);
-                postString = json.toString();
+                //JSONObject json = null;
+                //json = new JSONObject(inData);
+                //postString = json.toString();
+                Gson gson = new Gson();
+                postString = gson.toJson(inData);
             }
         }
 
@@ -1126,10 +1137,8 @@ public class EpicWarBot {
         HttpURLConnection request;
         try {
             if (mUseProxy && mProxy != null) {
-                Log.d(LOG_TAG, "mProxy(+) " + mProxy);
                 request = (HttpURLConnection) (reqURL.openConnection(mProxy));
             } else {
-                Log.d(LOG_TAG, "mProxy(-) " + mProxy);
                 request = (HttpURLConnection) (reqURL.openConnection());
             }
         } catch (IOException e) {
@@ -1342,11 +1351,9 @@ public class EpicWarBot {
 
                     currUrl = nextURL.toExternalForm();
                     if (mUseProxy && mProxy != null) {
-                        Log.d(LOG_TAG, "mProxy(+) " + mProxy);
                         request = (HttpURLConnection) nextURL
                                 .openConnection(mProxy);
                     } else {
-                        Log.d(LOG_TAG, "mProxy(-) " + mProxy);
                         request = (HttpURLConnection) nextURL
                                 .openConnection();
                     }

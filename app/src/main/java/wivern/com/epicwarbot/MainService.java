@@ -25,7 +25,7 @@ public class MainService extends Service {
     /**
      * main bot object.
      */
-    private EpicWarBot mEpicBot;
+    private static EpicWarBot mEpicBot;
     /**
      * tag for log.
      */
@@ -53,11 +53,11 @@ public class MainService extends Service {
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
-        mEpicBot = new EpicWarBot();
         final int proxyPort = 8888;
-        mEpicBot.setUseProxy(true);
-        mEpicBot.setProxy("192.168.0.4", proxyPort);
-        mEpicBot.testConnection();
+        EpicWarBot.setUseProxy(true);
+        EpicWarBot.setProxy("192.168.0.4", proxyPort);
+        EpicWarBot.testConnection();
+        mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
         //mTimer = new Timer();
         //schedule();
@@ -128,8 +128,6 @@ public class MainService extends Service {
     private void doAllBotTask() {
         synchronized (this) {
             Log.d(LOG_TAG, "IN doAllBotTask");
-            //try {
-            mEpicBot.testConnection();
             AnswerInfo ai;
             ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
                     mBotSettings.getVkPassword());
@@ -137,9 +135,7 @@ public class MainService extends Service {
             if (ai.isbError()) {
                 return;
             }
-            mEpicBot.testConnection();
             ai = mEpicBot.gameConnect();
-            mEpicBot.testConnection();
             sendAnswerToClients(ai);
             if (ai.isbError()) {
                 return;

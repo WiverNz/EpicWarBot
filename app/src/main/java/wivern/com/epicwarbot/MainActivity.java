@@ -22,10 +22,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
-import java.util.HashMap;
-
 /**
  * @since 1.0
  * Main activity class
