@@ -1119,7 +1119,7 @@ public class EpicWarBot {
         } else {
             if (inData != null) {
                 //JSONObject json = null;
-                //json = new JSONObject(inData);
+                //json = new JSONObject(inData);    // not work in service
                 //postString = json.toString();
                 Gson gson = new Gson();
                 postString = gson.toJson(inData);
@@ -1591,8 +1591,10 @@ public class EpicWarBot {
             final HashMap<String, Object> inData) {
         String postString = "";
         if (inData != null) {
-            JSONObject currJsonData = new JSONObject(inData);
-            postString = currJsonData.toString();
+            //JSONObject currJsonData = new JSONObject(inData);
+            //postString = currJsonData.toString();
+            Gson gson = new Gson();
+            postString = gson.toJson(inData);
         }
         String loc3 = "";
         loc3 += mSessionHeaderX.get("X-Request-Id");

@@ -169,7 +169,7 @@ public class MainActivity extends Activity
         mEtTasksLog = (EditText) this.findViewById(R.id.etTasksLog);
         mEtVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
         mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
-        mEtVkLogin.setText("13602098362");
+        mEtVkLogin.setText("13602098361");
         mEtVkPassword.setText("");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
