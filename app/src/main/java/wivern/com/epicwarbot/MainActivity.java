@@ -45,9 +45,9 @@ public class MainActivity extends Activity
          */
         NOT_INIT,
         /**
-         * connected msg.
+         * task result.
          */
-        CONNECT,
+        TASK_RESULT,
         /**
          * disconnected msg.
          */
@@ -91,7 +91,7 @@ public class MainActivity extends Activity
         /**
          * button connect.
          */
-        Button btnConnect;
+        Button btnDoAllTasks;
         /**
          * button disconnect.
          */
@@ -112,8 +112,8 @@ public class MainActivity extends Activity
          * edit text field for vk password.
          */
         EditText vkPassword;
-        btnConnect = (Button) this.findViewById(R.id.btnConnect);
-        btnConnect.setOnClickListener(this);
+        btnDoAllTasks = (Button) this.findViewById(R.id.btnDoAllTasks);
+        btnDoAllTasks.setOnClickListener(this);
         btnDisconnect = (Button) this.findViewById(R.id.btnDisconnect);
         btnDisconnect.setOnClickListener(this);
         btnStartService = (Button) this.findViewById(R.id.btnStartService);
@@ -178,7 +178,7 @@ public class MainActivity extends Activity
                         Message msg = new Message();
                         msg.what = 1;
                         Bundle sendData = new Bundle();
-                        sendData.putString("result", result.getSzInfo());
+                        sendData.putParcelable("AnswerInfo", result);
                         msg.setData(sendData);
                         mHandler.sendMessage(msg);
                     }
@@ -191,7 +191,10 @@ public class MainActivity extends Activity
                 mBound = true;
                 if (!mStartService) {
                     setParamsFromService();
+                } else {
+                    setParamsToService();
                 }
+                mStartService = false;
                 Log.d(LOG_TAG, "Service connected");
             }
 
@@ -216,31 +219,47 @@ public class MainActivity extends Activity
             }
         }
 
-        mStartService = false;
-
         return mBound;
     }
 
     /**
      * set params from service to main activity.
+     * this must be in main activity thread
      */
     private void setParamsFromService() {
-        Log.d(LOG_TAG, "IN setServiceParams");
+        Log.d(LOG_TAG, "IN setParamsFromService");
         if (!mBound) {
             return;
         }
-        AnswerInfo ai;
+        BotServiceSettings bss;
         try {
-            ai = mServiceApi.getServiceVariables();
-            if (ai != null) {
-                Log.d(LOG_TAG, "getServiceVariables result: " + ai.getSzInfo());
+            bss = mServiceApi.getServiceSettings();
+            if (bss != null) {
+                Log.d(LOG_TAG, "getServiceSettings result: "
+                        + bss.getVkLogin());
             } else {
-                Log.d(LOG_TAG, "getServiceVariables result: null");
+                Log.d(LOG_TAG, "getServiceSettings result: null");
             }
         } catch (RemoteException e) {
-            Log.d(LOG_TAG, "getServiceVariables error: " + e.toString());
+            Log.d(LOG_TAG, "getServiceSettings error: " + e.toString());
         }
-
+    }
+    /**
+     * set params from main activity to service.
+     * this must be in main activity thread
+     */
+    private void setParamsToService() {
+        Log.d(LOG_TAG, "IN setParamsToService");
+        if (!mBound) {
+            return;
+        }
+        BotServiceSettings bss = new BotServiceSettings();
+        bss.setLoginAndPass("login1", "pass2");
+        try {
+            mServiceApi.setServiceSettings(bss);
+        } catch (RemoteException e) {
+            Log.d(LOG_TAG, "setServiceSettings error: " + e.toString());
+        }
     }
 
     /**
@@ -285,7 +304,7 @@ public class MainActivity extends Activity
     @Override
     public final void onClick(final View v) {
         switch (v.getId()) {
-            case R.id.btnConnect:
+            case R.id.btnDoAllTasks:
                 if (mBound) {
                     try {
                         mServiceApi.doAllTask();
@@ -369,12 +388,17 @@ public class MainActivity extends Activity
             if (mActivity != null) {
                 MsgId currMsgId = MsgId.values()[msg.what];
                 switch (currMsgId) {
-                    case CONNECT:
+                    case TASK_RESULT:
                         Bundle sendData = msg.getData();
                         if (sendData != null) {
-                            String result = sendData.getString("result");
-                            Toast.makeText(mActivity.getApplicationContext(),
-                                    result, Toast.LENGTH_SHORT).show();
+                            AnswerInfo ai =
+                                    sendData.getParcelable("AnswerInfo");
+                            if (ai != null) {
+                                String result = ai.getRetValue("test");
+                                Toast.makeText(
+                                        mActivity.getApplicationContext(),
+                                        result, Toast.LENGTH_SHORT).show();
+                            }
                         }
                         // LooperThread.MSG_ID_CONNECT
 //                        Bundle sdata = msg.getData();

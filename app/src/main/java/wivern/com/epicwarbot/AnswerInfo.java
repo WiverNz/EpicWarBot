@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @since 1.0
@@ -87,6 +88,18 @@ public class AnswerInfo implements Parcelable {
     }
 
     /**
+     * get value from map.
+     * @param key key
+     * @return value
+     */
+    public final String getRetValue(final String key) {
+        if (hmRetValues.containsKey(key)) {
+            return hmRetValues.get(key);
+        } else {
+            return null;
+        }
+    }
+    /**
      * describe contents.
      * @return 0
      */
@@ -121,13 +134,18 @@ public class AnswerInfo implements Parcelable {
         szInfo = in.readString();
         szStatus = in.readString();
         int intBError = in.readInt();
-        if (intBError == 0) {
-            bError = false;
-        } else {
-            bError = true;
-        }
+        bError = intBError != 0;
         szErrorMsg = in.readString();
-        hmRetValues = in.readHashMap(HashMap.class.getClassLoader());
+        if (hmRetValues != null) {
+            hmRetValues.clear();
+        } else {
+            hmRetValues = new HashMap<>();
+        }
+        HashMap<?, ?> inMap = in.readHashMap(HashMap.class.getClassLoader());
+        for (Map.Entry<?, ?> currEntry : inMap.entrySet()) {
+            hmRetValues.put(currEntry.getKey().toString(),
+                    currEntry.getValue().toString());
+        }
     }
     /**
      * constructor from parcel.

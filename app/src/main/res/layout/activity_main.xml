@@ -78,10 +78,10 @@
                 android:layout_height="wrap_content">
 
                 <Button
-                    android:id="@+id/btnConnect"
+                    android:id="@+id/btnDoAllTasks"
                     android:layout_width="100dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/btnConnect"
+                    android:text="@string/btnDoAllTasks"
                     android:textSize="12sp"/>
 
                 <Button

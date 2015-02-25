@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 //import android.os.RemoteException;
+/**
+ * remo.
+ */
 import android.os.RemoteException;
 import android.util.Log;
 
@@ -115,18 +118,17 @@ public class MainService extends Service {
         }
 
         @Override
-        public void setVKLoginAndPass(final String login,
-                                      final String password) {
-            mVkLogin = login;
-            mVkPassword = password;
+        public void setServiceSettings(final BotServiceSettings settings) {
+            mVkLogin = settings.getVkLogin();
         }
 
         @Override
-        public AnswerInfo getServiceVariables() {
-            AnswerInfo ai = new AnswerInfo();
-            ai.set("infom", "statusm", true, "not init");
-            return ai;
+        public BotServiceSettings getServiceSettings() {
+            BotServiceSettings bss = new BotServiceSettings();
+            bss.setLoginAndPass(mVkLogin, mVkPassword);
+            return bss;
         }
+
     };
 
     /**
@@ -137,6 +139,7 @@ public class MainService extends Service {
         //try {
             AnswerInfo ai = new AnswerInfo();
             ai.set("test result2", "statusm", true, "not init");
+        ai.addValue("test", "testValue");
         sendAnswerToClients(ai);
             //listener.onTaskResult(ai);
        // } catch (RemoteException e) {
