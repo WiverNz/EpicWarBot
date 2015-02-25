@@ -1,4 +1,10 @@
 package wivern.com.epicwarbot;
+/**
+ * TODO: 1) proxy (default and set)
+ * TODO: 2) debug in thread (breakpoints)
+ * TODO: 3) static variables and methods (null)
+ * TODO: 4) hashmap to json
+ */
 
 import android.util.Log;
 
@@ -363,6 +369,11 @@ public class EpicWarBot {
      */
     public static void setUseProxy(final boolean useProxy) {
         mUseProxy = useProxy;
+        if (mUseProxy) {
+            System.setProperty("java.net.useSystemProxies", "false");
+        } else {
+            System.setProperty("java.net.useSystemProxies", "true");
+        }
     }
 
     /**
@@ -373,6 +384,7 @@ public class EpicWarBot {
      */
     public static void setProxy(final String ip, final int port) {
         mProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(ip, port));
+        Log.d(LOG_TAG, "mProxy " + mProxy);
     }
     /**
      * connect to vk.
@@ -553,6 +565,7 @@ public class EpicWarBot {
     private HashMap<String, Object> getApiVkAboutUsers(
             final List<String> friendsArray,
             final List<String> appFriendsArray) {
+        Log.d(LOG_TAG, "IN getApiVkAboutUsers");
         String errorMessage = "";
         HashMap<String, Object> retApiUsers = new HashMap<>();
 
@@ -628,6 +641,7 @@ public class EpicWarBot {
             } catch (JSONException e) {
                 errorMessage = "Not connected!" + e.toString()
                         + "sendRecvFirstData parse json error";
+                Log.d(LOG_TAG, "getApiVkAboutUsers " + errorMessage);
             }
         }
         retApiUsers.put("friendsArray", friendsArray);
@@ -648,6 +662,7 @@ public class EpicWarBot {
      * @return return data from html
      */
     private ReturnData sendFirstData() {
+        Log.d(LOG_TAG, "IN sendFirstData");
         ReturnData retDict = new ReturnData();
 
         List<String> friendsArray = new ArrayList<>();
@@ -730,7 +745,7 @@ public class EpicWarBot {
         jCalls.add(genCall("state", jArgsEmpty, null));
 
         HashMap<String, Object> jsonData = new HashMap<>();
-        jsonData.put("sesion", null);
+        jsonData.put("session", null);
         jsonData.put("calls", jCalls);
 
         retDict = sendReceive(jsonData);
@@ -744,6 +759,7 @@ public class EpicWarBot {
      * @return answer info
      */
     private AnswerInfo sendReceiveFirstData() {
+        Log.d(LOG_TAG, "IN sendReceiveFirstData");
         AnswerInfo retResult = new AnswerInfo();
         ReturnData retDict = sendFirstData();
         if (retDict.getStatus() == Status.SUCCESS) {
@@ -826,6 +842,8 @@ public class EpicWarBot {
                 retResult.set("Not connected!", e.toString(), true,
                         "retDictFormJson parse error "
                                 + retDict.getResponseStr());
+                Log.d(LOG_TAG, "sendReceiveFirstData error parse: "
+                        + retDict.getResponseStr());
             }
 
         } else {
@@ -851,7 +869,7 @@ public class EpicWarBot {
             jCalls.add(genCall("group_0_body", jArgsEmpty, "cemeteryFarm"));
             jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
             HashMap<String, Object> jsonData = new HashMap<>();
-            jsonData.put("sesion", null);
+            jsonData.put("session", null);
             jsonData.put("calls", jCalls);
 
             ReturnData retDict = sendReceive(jsonData);
@@ -896,7 +914,7 @@ public class EpicWarBot {
                     "getUsersInfo"));
             jCalls.add(genCall("group_2_body", jArgsEmpty, "state"));
             HashMap<String, Object> jsonData = new HashMap<>();
-            jsonData.put("sesion", null);
+            jsonData.put("session", null);
             jsonData.put("calls", jCalls);
 
             ReturnData retDict = sendReceive(jsonData);
@@ -927,7 +945,7 @@ public class EpicWarBot {
         jCalls.add(genCall("group_2_body", jArgsEmpty, "giftGetAvailable"));
         jCalls.add(genCall("group_3_body", jArgsEmpty, "state"));
         HashMap<String, Object> jsonData = new HashMap<>();
-        jsonData.put("sesion", null);
+        jsonData.put("session", null);
         jsonData.put("calls", jCalls);
 
         ReturnData retDict = sendReceive(jsonData);
@@ -976,7 +994,7 @@ public class EpicWarBot {
         jCalls.add(genCall("group_0_body", jArgsBuildingId, "collectResource"));
         jCalls.add(genCall("group_1_body", jArgsEmpty, "state"));
         HashMap<String, Object> jsonData = new HashMap<>();
-        jsonData.put("sesion", null);
+        jsonData.put("session", null);
         jsonData.put("calls", jCalls);
 
         ReturnData retDict = sendReceive(jsonData);
@@ -1025,6 +1043,22 @@ public class EpicWarBot {
     }
 
     /**
+     * test connection.
+     */
+    public static void testConnection() {
+
+        Thread myThready = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                CookieManager cookieManager = new java.net.CookieManager();
+                getPost("http://ya.ru/", "GET", null, null,
+                        cookieManager, false, false);
+            }
+        });
+        myThready.start();
+
+    }
+    /**
      * get or post http query.
      *
      * @param urlString     url
@@ -1043,7 +1077,9 @@ public class EpicWarBot {
                                      final CookieManager cookieManager,
                                      final boolean flJSON,
                                      final boolean flForm) {
-
+        System.setProperty("java.net.useSystemProxies", "false");
+        System.setProperty("http.proxyHost", "192.168.0.1");
+        System.setProperty("http.proxyPort", "7888");
         ReturnData responseData = new ReturnData();
         if (!typePostGet.toLowerCase(Locale.getDefault()).contentEquals("post")
                 && !typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
@@ -1057,20 +1093,26 @@ public class EpicWarBot {
         String postString = "";
 
         if (!flJSON) {
-            for (Entry<String, Object> cVal : inData.entrySet()) {
-                if (!postString.equals("")) {
-                    postString += "&";
+            if (inData != null) {
+                for (Entry<String, Object> cVal : inData.entrySet()) {
+                    if (!postString.equals("")) {
+                        postString += "&";
+                    }
+                    postString += cVal.getKey() + "="
+                            + cVal.getValue().toString();
                 }
-                postString += cVal.getKey() + "=" + cVal.getValue().toString();
-            }
-            if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
-                    "get")
-                    && !postString.equals("")) {
-                cUrlString += "?" + postString;
+                if (typePostGet.toLowerCase(Locale.getDefault()).contentEquals(
+                        "get")
+                        && !postString.equals("")) {
+                    cUrlString += "?" + postString;
+                }
             }
         } else {
-            JSONObject json = new JSONObject(inData);
-            postString = json.toString();
+            if (inData != null) {
+                JSONObject json = new JSONObject(inData);
+                Log.d(LOG_TAG, "json: " + inData);
+                postString = json.toString();
+            }
         }
 
         URL reqURL;
@@ -1084,8 +1126,10 @@ public class EpicWarBot {
         HttpURLConnection request;
         try {
             if (mUseProxy && mProxy != null) {
+                Log.d(LOG_TAG, "mProxy(+) " + mProxy);
                 request = (HttpURLConnection) (reqURL.openConnection(mProxy));
             } else {
+                Log.d(LOG_TAG, "mProxy(-) " + mProxy);
                 request = (HttpURLConnection) (reqURL.openConnection());
             }
         } catch (IOException e) {
@@ -1095,13 +1139,8 @@ public class EpicWarBot {
         }
         try {
             request.setInstanceFollowRedirects(mAutoRedirect);
-            setUrlConnection(request,
-                    postString,
-                    typePostGet,
-                    header,
-                    flJSON,
-                    flForm,
-                    cookieManager);
+            setUrlConnection(request, postString, typePostGet, header, flJSON,
+                    flForm, cookieManager);
         } catch (ProtocolException e) {
             responseData.setErrorMsg(e.toString());
             responseData.setStatus(Status.ERROR);
@@ -1303,9 +1342,11 @@ public class EpicWarBot {
 
                     currUrl = nextURL.toExternalForm();
                     if (mUseProxy && mProxy != null) {
+                        Log.d(LOG_TAG, "mProxy(+) " + mProxy);
                         request = (HttpURLConnection) nextURL
                                 .openConnection(mProxy);
                     } else {
+                        Log.d(LOG_TAG, "mProxy(-) " + mProxy);
                         request = (HttpURLConnection) nextURL
                                 .openConnection();
                     }

@@ -22,6 +22,10 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
+import java.util.HashMap;
+
 /**
  * @since 1.0
  * Main activity class
@@ -169,7 +173,7 @@ public class MainActivity extends Activity
         mEtTasksLog = (EditText) this.findViewById(R.id.etTasksLog);
         mEtVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
         mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
-        mEtVkLogin.setText("13602098361");
+        mEtVkLogin.setText("13602098362");
         mEtVkPassword.setText("");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
