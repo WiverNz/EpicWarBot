@@ -106,6 +106,22 @@ public class BotServiceSettings implements Parcelable {
     public final void setFlagCemetery(final boolean flag) {
         mFlagCollectCemetery = flag;
     }
+
+    /**
+     * get timer interval.
+     * @return timer interval
+     */
+    public final long getInterval() {
+        return mInterval;
+    }
+
+    /**
+     * set timer interval.
+     * @param interval timer interval
+     */
+    public final void setInterval(final long interval) {
+        mInterval = interval;
+    }
     /**
      * default constructor.
      */

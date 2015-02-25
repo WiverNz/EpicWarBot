@@ -1,9 +1,4 @@
 package wivern.com.epicwarbot;
-/**
- * TODO: 1) proxy (default from system)
- * TODO: 2) debug in thread (breakpoints)
- * TODO: 3) hashmap to json
- */
 
 import android.util.Log;
 
@@ -1053,18 +1048,8 @@ public class EpicWarBot {
         Thread myThready = new Thread(new Runnable() {
             @Override
             public void run() {
-                JSONObject jReferrer = new JSONObject();
-                try {
-                    jReferrer.put("type", toJsonString("user_apps"));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                HashMap<String, Object> jsonData = new HashMap<>();
-                jsonData.put("session", null);
-                jsonData.put("calls", jReferrer);
                 CookieManager cookieManager = new java.net.CookieManager();
-                getPost("http://ya.ru/", "POST", jsonData, null,
+                getPost("http://ya.ru/", "POST", null, null,
                         cookieManager, true, false);
             }
         });
@@ -1121,7 +1106,6 @@ public class EpicWarBot {
             if (inData != null) {
                 //JSONObject json = null;
                 //json = new JSONObject(inData);    // not work in service
-                //postString = json.toString();
                 Gson gson = new Gson();
                 postString = gson.toJson(inData);
             }

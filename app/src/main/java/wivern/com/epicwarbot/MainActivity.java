@@ -72,6 +72,7 @@ public class MainActivity extends Activity
 
         /**
          * default private constructor.
+         *
          * @param inValue int value
          */
         private MsgId(final int inValue) {
@@ -80,6 +81,7 @@ public class MainActivity extends Activity
 
         /**
          * get int value.
+         *
          * @return int value
          */
         public int getValue() {
@@ -121,6 +123,18 @@ public class MainActivity extends Activity
      */
     private CheckBox mChbFlagResources;
     /**
+     * check box "Send and receive gifts".
+     */
+    private CheckBox mChbFlagSendReceiveGifts;
+    /**
+     * check box "Collect cemetery".
+     */
+    private CheckBox mChbFlagCollectCemetery;
+    /**
+     * timer interval.
+     */
+    private EditText mEtInterval;
+    /**
      * edit text task log.
      */
     private EditText mEtTasksLog;
@@ -132,6 +146,7 @@ public class MainActivity extends Activity
      * edit text field for vk password.
      */
     private EditText mEtVkPassword;
+
     /**
      * on create activity.
      *
@@ -162,6 +177,13 @@ public class MainActivity extends Activity
                 (CheckBox) this.findViewById(R.id.chbIsServiceStarted);
         mChbFlagResources =
                 (CheckBox) this.findViewById(R.id.chbFlagResources);
+        mChbFlagResources.setChecked(true);
+        mChbFlagSendReceiveGifts =
+                (CheckBox) this.findViewById(R.id.chbFlagSendReceiveGifts);
+        mChbFlagSendReceiveGifts.setChecked(true);
+        mChbFlagCollectCemetery =
+                (CheckBox) this.findViewById(R.id.chbFlagCollectCemetery);
+        mChbFlagCollectCemetery.setChecked(true);
         btnDoAllTasks = (Button) this.findViewById(R.id.btnDoAllTasks);
         btnDoAllTasks.setOnClickListener(this);
         btnUpdateSettings = (Button) this.findViewById(R.id.btnUpdateSettings);
@@ -175,6 +197,8 @@ public class MainActivity extends Activity
         mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
         mEtVkLogin.setText("13602098361");
         mEtVkPassword.setText("");
+        mEtInterval = (EditText) this.findViewById(R.id.etInterval);
+        mEtInterval.setText("2");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
         mIntent.setAction("service.EpicWarBot");
@@ -278,6 +302,7 @@ public class MainActivity extends Activity
 
     /**
      * on task result.
+     *
      * @param ai answer info
      */
     public final void onTaskResult(final AnswerInfo ai) {
@@ -286,12 +311,12 @@ public class MainActivity extends Activity
         SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
                 Locale.getDefault());
         String currTime = dateStringFormatter.format(currDate.getTime());
+        String currText = currTime + ": " + result;
         if (ai.isbError()) {
-            mEtTasksLog.append(currTime + ": "
-                    + result + " " + ai.getError() + "\n");
-        } else {
-            mEtTasksLog.append(currTime + ": " + result + "\n");
+            currText = currText + " " + ai.getError();
         }
+        currText = currText + "\n";
+        mEtTasksLog.append(currText, 0, currText.length());
         //Toast.makeText(getApplicationContext(),
         //        result, Toast.LENGTH_SHORT).show();
     }
@@ -305,6 +330,8 @@ public class MainActivity extends Activity
         if (!mBound) {
             return;
         }
+        final long secInMin = 60;
+        final long minInHour = 60;
         BotServiceSettings bss;
         try {
             bss = mServiceApi.getServiceSettings();
@@ -314,6 +341,10 @@ public class MainActivity extends Activity
                 mEtVkLogin.setText(bss.getVkLogin());
                 mEtVkPassword.setText(bss.getVkPassword());
                 mChbFlagResources.setChecked(bss.getFlagResources());
+                mChbFlagCollectCemetery.setChecked(bss.getFlagCemetery());
+                mChbFlagSendReceiveGifts.setChecked(bss.getFlagGifts());
+                long interval = bss.getInterval() / (secInMin * minInHour);
+                mEtInterval.setText(String.valueOf(interval));
             } else {
                 Log.d(LOG_TAG, "getServiceSettings result: null");
             }
@@ -321,6 +352,7 @@ public class MainActivity extends Activity
             Log.d(LOG_TAG, "getServiceSettings error: " + e.toString());
         }
     }
+
     /**
      * set params from main activity to service.
      * this must be in main activity thread
@@ -330,10 +362,17 @@ public class MainActivity extends Activity
         if (!mBound) {
             return;
         }
+        final long secInMin = 60;
+        final long minInHour = 60;
         BotServiceSettings bss = new BotServiceSettings();
         bss.setLoginAndPass(mEtVkLogin.getText().toString(),
                 mEtVkPassword.getText().toString());
         bss.setFlagResources(mChbFlagResources.isChecked());
+        bss.setFlagCemetery(mChbFlagCollectCemetery.isChecked());
+        bss.setFlagGifts(mChbFlagSendReceiveGifts.isChecked());
+        long interval = Long.parseLong(mEtInterval.getText().toString())
+                * minInHour * secInMin;
+        bss.setInterval(interval);
         try {
             mServiceApi.setServiceSettings(bss);
         } catch (RemoteException e) {
@@ -410,8 +449,10 @@ public class MainActivity extends Activity
                 break;
         }
     }
+
     /**
      * check that service is running.
+     *
      * @param serviceClass service to check
      * @return true - started
      */
@@ -419,13 +460,14 @@ public class MainActivity extends Activity
         ActivityManager manager =
                 (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service
-                :manager.getRunningServices(Integer.MAX_VALUE)) {
+                : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
                 return true;
             }
         }
         return false;
     }
+
     /**
      * @since 1.0
      * handler class

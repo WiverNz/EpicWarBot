@@ -11,4 +11,8 @@
     <string name="btnStopService">Stop service</string>
     <string name="chbIsServiceStarted">Running</string>
     <string name="chbFlagResources">Collect resources</string>
+    <string name="chbFlagSendReceiveGifts">Send and receive gifts</string>
+    <string name="chbFlagCollectCemetery">Collect cemetery</string>
+    <string name="tvInterval">Interval</string>
+    <string name="hintLog">log</string>
 </resources>
