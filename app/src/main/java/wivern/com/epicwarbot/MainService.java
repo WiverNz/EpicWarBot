@@ -44,36 +44,17 @@ public class MainService extends Service {
      */
     private TimerTask mTimerTask;
     /**
-     * default interval for timer.
+     * bot settings.
      */
-    private final long mDefInterval = 1000;
-    /**
-     * interval for timer.
-     */
-    private long mInterval = mDefInterval;
-    /**
-     * vk login.
-     */
-    private String mVkLogin;
-    /**
-     * vk pass.
-     */
-    private String mVkPassword;
-
-    /**
-     * need to collect resources.
-     */
-    private boolean mFlagCollectResources;
-    /**
-     * need to send/receive gifts.
-     */
-    private boolean mFlagSendReceiveGifts;
+    private BotServiceSettings mBotSettings;
     /**
      * on create service.
      */
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
+        mEpicBot = new EpicWarBot();
+        mBotSettings = new BotServiceSettings();
         //mTimer = new Timer();
         //schedule();
     }
@@ -104,12 +85,16 @@ public class MainService extends Service {
 
         @Override
         public void addCallback(final IBotServiceCallback listener) {
-            mCallbacks.register(listener);
+            synchronized (this) {
+                mCallbacks.register(listener);
+            }
         }
 
         @Override
         public void removeCallback(final IBotServiceCallback listener) {
-            mCallbacks.unregister(listener);
+            synchronized (this) {
+                mCallbacks.unregister(listener);
+            }
         }
 
         @Override
@@ -119,14 +104,16 @@ public class MainService extends Service {
 
         @Override
         public void setServiceSettings(final BotServiceSettings settings) {
-            mVkLogin = settings.getVkLogin();
+            synchronized (this) {
+                mBotSettings = settings;
+            }
         }
 
         @Override
         public BotServiceSettings getServiceSettings() {
-            BotServiceSettings bss = new BotServiceSettings();
-            bss.setLoginAndPass(mVkLogin, mVkPassword);
-            return bss;
+            synchronized (this) {
+                return mBotSettings;
+            }
         }
 
     };
@@ -135,12 +122,44 @@ public class MainService extends Service {
      * do all bot task.
      */
     private void doAllBotTask() {
-        Log.d(LOG_TAG, "IN doAllBotTask");
-        //try {
-            AnswerInfo ai = new AnswerInfo();
-            ai.set("test result2", "statusm", true, "not init");
-        ai.addValue("test", "testValue");
-        sendAnswerToClients(ai);
+        synchronized (this) {
+            Log.d(LOG_TAG, "IN doAllBotTask");
+            //try {
+            AnswerInfo ai;
+            ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
+                    mBotSettings.getVkPassword());
+            sendAnswerToClients(ai);
+            if (ai.isbError()) {
+                return;
+            }
+            ai = mEpicBot.gameConnect();
+            sendAnswerToClients(ai);
+            if (ai.isbError()) {
+                return;
+            }
+            if (mBotSettings.getFlagResources()) {
+                ai = mEpicBot.collectAllResources();
+                sendAnswerToClients(ai);
+                if (ai.isbError()) {
+                    return;
+                }
+            }
+            if (mBotSettings.getFlagGifts()) {
+                mEpicBot.giftSend();
+                ai = mEpicBot.farmAllGifts();
+                sendAnswerToClients(ai);
+                if (ai.isbError()) {
+                    return;
+                }
+            }
+            if (mBotSettings.getFlagCemetery()) {
+                ai = mEpicBot.cemeteryFarm();
+                sendAnswerToClients(ai);
+                if (ai.isbError()) {
+                    return;
+                }
+            }
+        }
     }
 
     /**

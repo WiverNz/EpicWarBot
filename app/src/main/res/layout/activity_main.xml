@@ -31,7 +31,7 @@
                     android:layout_column="1"
                     android:id="@+id/chbIsServiceStarted"
                     android:text="@string/chbIsServiceStarted"
-                    android:textAlignment="textStart"
+                    android:layout_gravity="start"
                     android:textColor="#ff000000"/>
             </TableRow>
             <TableRow
@@ -61,7 +61,20 @@
                     android:inputType="textPassword"/>
             </TableRow>
         </TableLayout>
-
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <CheckBox
+                    android:layout_column="1"
+                    android:id="@+id/chbFlagResources"
+                    android:text="@string/chbFlagResources"
+                    android:layout_gravity="start"
+                    android:textColor="#ff000000"/>
+            </TableRow>
+        </TableLayout>
         <TableLayout
             android:id="@+id/tblPartRep"
             android:layout_width="match_parent"

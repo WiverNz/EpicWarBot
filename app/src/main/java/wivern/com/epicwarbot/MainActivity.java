@@ -113,9 +113,21 @@ public class MainActivity extends Activity
      */
     private CheckBox mChbIsServiceStarted;
     /**
+     * check box "collect resources".
+     */
+    private CheckBox mChbFlagResources;
+    /**
      * edit text task log.
      */
     private EditText mEtTasksLog;
+    /**
+     * edit text field for vk login.
+     */
+    private EditText mEtVkLogin;
+    /**
+     * edit text field for vk password.
+     */
+    private EditText mEtVkPassword;
     /**
      * on create activity.
      *
@@ -141,16 +153,11 @@ public class MainActivity extends Activity
          * button stop service.
          */
         Button btnStopService;
-        /**
-         * edit text field for vk login.
-         */
-        EditText vkLogin;
-        /**
-         * edit text field for vk password.
-         */
-        EditText vkPassword;
+
         mChbIsServiceStarted =
                 (CheckBox) this.findViewById(R.id.chbIsServiceStarted);
+        mChbFlagResources =
+                (CheckBox) this.findViewById(R.id.chbFlagResources);
         btnDoAllTasks = (Button) this.findViewById(R.id.btnDoAllTasks);
         btnDoAllTasks.setOnClickListener(this);
         btnUpdateSettings = (Button) this.findViewById(R.id.btnUpdateSettings);
@@ -160,10 +167,10 @@ public class MainActivity extends Activity
         btnStopService = (Button) this.findViewById(R.id.btnStopService);
         btnStopService.setOnClickListener(this);
         mEtTasksLog = (EditText) this.findViewById(R.id.etTasksLog);
-        vkLogin = (EditText) this.findViewById(R.id.etVkLogin);
-        vkPassword = (EditText) this.findViewById(R.id.etVkPassword);
-        vkLogin.setText("13602098361");
-        vkPassword.setText("");
+        mEtVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
+        mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
+        mEtVkLogin.setText("13602098361");
+        mEtVkPassword.setText("");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
         mIntent.setAction("service.EpicWarBot");
@@ -270,7 +277,7 @@ public class MainActivity extends Activity
      * @param ai answer info
      */
     public final void onTaskResult(final AnswerInfo ai) {
-        String result = ai.getRetValue("test");
+        String result = ai.getSzInfo();
         mEtTasksLog.append(result + "\n");
         Toast.makeText(getApplicationContext(),
                 result, Toast.LENGTH_SHORT).show();
@@ -291,6 +298,9 @@ public class MainActivity extends Activity
             if (bss != null) {
                 Log.d(LOG_TAG, "getServiceSettings result: "
                         + bss.getVkLogin());
+                mEtVkLogin.setText(bss.getVkLogin());
+                mEtVkPassword.setText(bss.getVkPassword());
+                mChbFlagResources.setChecked(bss.getFlagResources());
             } else {
                 Log.d(LOG_TAG, "getServiceSettings result: null");
             }
@@ -308,7 +318,9 @@ public class MainActivity extends Activity
             return;
         }
         BotServiceSettings bss = new BotServiceSettings();
-        bss.setLoginAndPass("login1", "pass2");
+        bss.setLoginAndPass(mEtVkLogin.getText().toString(),
+                mEtVkPassword.getText().toString());
+        bss.setFlagResources(mChbFlagResources.isChecked());
         try {
             mServiceApi.setServiceSettings(bss);
         } catch (RemoteException e) {

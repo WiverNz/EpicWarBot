@@ -10,4 +10,5 @@
     <string name="btnStartService">Start service</string>
     <string name="btnStopService">Stop service</string>
     <string name="chbIsServiceStarted">Running</string>
+    <string name="chbFlagResources">Collect resources</string>
 </resources>

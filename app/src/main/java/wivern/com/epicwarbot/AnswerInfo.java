@@ -33,6 +33,13 @@ public class AnswerInfo implements Parcelable {
     private HashMap<String, String> hmRetValues;
 
     /**
+     * check error flag.
+     * @return error flag
+     */
+    public final boolean isbError() {
+        return bError;
+    }
+    /**
      * default constructor.
      */
     AnswerInfo() {

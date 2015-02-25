@@ -24,7 +24,88 @@ public class BotServiceSettings implements Parcelable {
      * need to send/receive gifts.
      */
     private boolean mFlagSendReceiveGifts;
-
+    /**
+     * need to collect cemetery.
+     */
+    private boolean mFlagCollectCemetery;
+    /**
+     * default interval for timer.
+     */
+    private final long mDefInterval = 1000;
+    /**
+     * interval for timer.
+     */
+    private long mInterval = mDefInterval;
+    /**
+     * get vk login.
+     * @return vk login
+     */
+    public final String getVkLogin() {
+        return mVkLogin;
+    }
+    /**
+     * set vk login.
+     * @param login vk login
+     */
+    public final void setVkLogin(final String login) {
+        mVkLogin = login;
+    }
+    /**
+     * get vk password.
+     * @return vk password
+     */
+    public final String getVkPassword() {
+        return mVkPassword;
+    }
+    /**
+     * set vk password.
+     * @param pass vk password
+     */
+    public final void setVkPassword(final String pass) {
+        mVkPassword = pass;
+    }
+    /**
+     * get flag resources.
+     * @return flag collect resources
+     */
+    public final boolean getFlagResources() {
+        return mFlagCollectResources;
+    }
+    /**
+     * set flag resources.
+     * @param flag resources
+     */
+    public final void setFlagResources(final boolean flag) {
+        mFlagCollectResources = flag;
+    }
+    /**
+     * get flag gifts.
+     * @return flag collect gifts
+     */
+    public final boolean getFlagGifts() {
+        return mFlagSendReceiveGifts;
+    }
+    /**
+     * set flag gifts.
+     * @param flag gifts
+     */
+    public final void setFlagGifts(final boolean flag) {
+        mFlagSendReceiveGifts = flag;
+    }
+    /**
+     * get flag cemetery.
+     * @return flag collect cemetery
+     */
+    public final boolean getFlagCemetery() {
+        return mFlagCollectCemetery;
+    }
+    /**
+     * set flag cemetery.
+     * @param flag cemetery
+     */
+    public final void setFlagCemetery(final boolean flag) {
+        mFlagCollectCemetery = flag;
+    }
     /**
      * default constructor.
      */
@@ -38,8 +119,8 @@ public class BotServiceSettings implements Parcelable {
      */
     public final void setLoginAndPass(final String login,
                                       final String pass) {
-        mVkLogin = login;
-        mVkPassword = pass;
+        setVkLogin(login);
+        setVkPassword(pass);
     }
 
     /**
@@ -69,13 +150,6 @@ public class BotServiceSettings implements Parcelable {
         mFlagSendReceiveGifts = intToBool(in.readInt());
     }
 
-    /**
-     * get vk login.
-     * @return vk login
-     */
-    public final String getVkLogin() {
-        return mVkLogin;
-    }
     /**
      * boolean to int.
      * @param inBool input boolean
