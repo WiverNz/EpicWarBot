@@ -141,10 +141,6 @@ public class MainService extends Service {
             ai.set("test result2", "statusm", true, "not init");
         ai.addValue("test", "testValue");
         sendAnswerToClients(ai);
-            //listener.onTaskResult(ai);
-       // } catch (RemoteException e) {
-        //    Log.d(LOG_TAG, "onConnectedResult exception: " + e.toString());
-       // }
     }
 
     /**

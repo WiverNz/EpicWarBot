@@ -43,15 +43,43 @@ public class MainActivity extends Activity
         /**
          * not initialized msg.
          */
-        NOT_INIT,
+        NOT_INIT(0),
         /**
          * task result.
          */
-        TASK_RESULT,
+        TASK_RESULT(1),
+        /**
+         * set settings to service.
+         */
+        SET_SETTINGS(2),
+        /**
+         * get settings from service.
+         */
+        GET_SETTINGS(3),
         /**
          * disconnected msg.
          */
-        DISCONNECT
+        DISCONNECT(4);
+        /**
+         * int value.
+         */
+        private final int value;
+
+        /**
+         * default private constructor.
+         * @param inValue int value
+         */
+        private MsgId(final int inValue) {
+            this.value = inValue;
+        }
+
+        /**
+         * get int value.
+         * @return int value
+         */
+        public int getValue() {
+            return value;
+        }
     }
 
     /**
@@ -190,9 +218,9 @@ public class MainActivity extends Activity
                 }
                 mBound = true;
                 if (!mStartService) {
-                    setParamsFromService();
+                    mHandler.sendEmptyMessage(MsgId.GET_SETTINGS.getValue());
                 } else {
-                    setParamsToService();
+                    mHandler.sendEmptyMessage(MsgId.SET_SETTINGS.getValue());
                 }
                 mStartService = false;
                 Log.d(LOG_TAG, "Service connected");
@@ -220,6 +248,16 @@ public class MainActivity extends Activity
         }
 
         return mBound;
+    }
+
+    /**
+     * on task result.
+     * @param ai answer info
+     */
+    public final void onTaskResult(final AnswerInfo ai) {
+        String result = ai.getRetValue("test");
+        Toast.makeText(getApplicationContext(),
+                result, Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -312,19 +350,8 @@ public class MainActivity extends Activity
                         e.printStackTrace();
                     }
                 }
-
-//                if (m_engineLooper != null) {
-//                    Bundle sdata = new Bundle();
-//                    sdata.putString("login", m_vkLogin.getText().toString());
-//    sdata.putString("password", m_vkPassword.getText().toString());
-//   m_engineLooper.SendMessage(LooperThread.MSG_ID_CONNECT, sdata);
-//                }
                 break;
             case R.id.btnDisconnect:
-//                if (m_engineLooper != null) {
-//                    m_engineLooper
-//   .SendMessage(LooperThread.MSG_ID_DISCONNECT, null);
-//                }
                 break;
             case R.id.btnStartService:
                 if (!mBound) {
@@ -332,7 +359,6 @@ public class MainActivity extends Activity
                     startService(mIntent);
                     connectToService();
                 }
-
                 break;
             case R.id.btnStopService:
                 disconnectFromService();
@@ -394,32 +420,15 @@ public class MainActivity extends Activity
                             AnswerInfo ai =
                                     sendData.getParcelable("AnswerInfo");
                             if (ai != null) {
-                                String result = ai.getRetValue("test");
-                                Toast.makeText(
-                                        mActivity.getApplicationContext(),
-                                        result, Toast.LENGTH_SHORT).show();
+                                mActivity.onTaskResult(ai);
                             }
                         }
-                        // LooperThread.MSG_ID_CONNECT
-//                        Bundle sdata = msg.getData();
-//                        if (sdata != null) {
-//                            String funcInfo = sdata.getString("funcInfo");
-//                            String info = sdata.getString("info");
-//                            boolean ferror = sdata.getBoolean("error");
-//                            if (ferror == true) {
-//                                String errorMsg = sdata.getString("errorMsg");
-//
-//                                Toast.makeText(m_activity, errorMsg,
-//                                        Toast.LENGTH_LONG).show();
-//                            } else {
-//                                if (funcInfo != null) {
-//                                    Toast.makeText(m_activity,
-//                                            funcInfo + ": " + info,
-//                                            Toast.LENGTH_SHORT).show();
-//                                }
-//                            }
-//                        }
-
+                        break;
+                    case GET_SETTINGS:
+                        mActivity.setParamsFromService();
+                        break;
+                    case SET_SETTINGS:
+                        mActivity.setParamsToService();
                         break;
                     default:
                         break;
