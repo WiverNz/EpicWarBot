@@ -332,6 +332,7 @@ public class MainActivity extends Activity
         }
         final long secInMin = 60;
         final long minInHour = 60;
+        final long msInSec = 1000;
         BotServiceSettings bss;
         try {
             bss = mServiceApi.getServiceSettings();
@@ -343,7 +344,8 @@ public class MainActivity extends Activity
                 mChbFlagResources.setChecked(bss.getFlagResources());
                 mChbFlagCollectCemetery.setChecked(bss.getFlagCemetery());
                 mChbFlagSendReceiveGifts.setChecked(bss.getFlagGifts());
-                long interval = bss.getInterval() / (secInMin * minInHour);
+                long interval = bss.getInterval()
+                        / (secInMin * minInHour * msInSec);
                 mEtInterval.setText(String.valueOf(interval));
             } else {
                 Log.d(LOG_TAG, "getServiceSettings result: null");
@@ -364,6 +366,7 @@ public class MainActivity extends Activity
         }
         final long secInMin = 60;
         final long minInHour = 60;
+        final long msInSec = 1000;
         BotServiceSettings bss = new BotServiceSettings();
         bss.setLoginAndPass(mEtVkLogin.getText().toString(),
                 mEtVkPassword.getText().toString());
@@ -371,7 +374,7 @@ public class MainActivity extends Activity
         bss.setFlagCemetery(mChbFlagCollectCemetery.isChecked());
         bss.setFlagGifts(mChbFlagSendReceiveGifts.isChecked());
         long interval = Long.parseLong(mEtInterval.getText().toString())
-                * minInHour * secInMin;
+                * minInHour * secInMin * msInSec;
         bss.setInterval(interval);
         try {
             mServiceApi.setServiceSettings(bss);

@@ -1,7 +1,4 @@
 package wivern.com.epicwarbot;
-/**
- * Created by askibin on 12.02.2015.
- */
 
 import android.app.Service;
 import android.content.Intent;
@@ -14,6 +11,7 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 
+import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -59,14 +57,6 @@ public class MainService extends Service {
         //EpicWarBot.testConnection();
         mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
-        mTimer = new Timer();
-        mTimerTask = new TimerTask() {
-            @Override
-            public void run() {
-                Log.d(LOG_TAG, "IN TimerTask");
-                //doAllBotTask();
-            }
-        };
         schedule();
     }
 
@@ -121,6 +111,7 @@ public class MainService extends Service {
         public void setServiceSettings(final BotServiceSettings settings) {
             synchronized (this) {
                 mBotSettings = settings;
+                schedule();
             }
         }
 
@@ -210,11 +201,51 @@ public class MainService extends Service {
      */
     public final void schedule() {
         Log.d(LOG_TAG, "IN schedule");
-        if (mTimerTask == null) {
-            return;
+        long timeFirstTask = mBotSettings.getDefInterval();
+        if (mTimerTask != null) {
+            /**
+             * last task time (if happened).
+             */
+            long currLastTaskTime = mTimerTask.scheduledExecutionTime();
+            if (currLastTaskTime != 0) {
+                Calendar currDate = Calendar.getInstance();
+                long currTime = currDate.getTimeInMillis();
+                /**
+                 * time between curr time and last task time.
+                 */
+                long currLastTask = currTime - currLastTaskTime;
+                Log.d(LOG_TAG, "currLastTask " + currLastTask);
+                if (currLastTask > 0 && currLastTask < timeFirstTask) {
+                    timeFirstTask = timeFirstTask - currLastTask;
+                }
+            }
+            mTimerTask = null;
         }
+        mTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                Log.d(LOG_TAG, "IN TimerTask");
+                //doAllBotTask();
+            }
+        };
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+        mTimer = new Timer();
         if (mBotSettings.getInterval() > 0) {
-            mTimer.schedule(mTimerTask, mBotSettings.getDefInterval(),
+            /**
+             * schedule(TimerTask task, long when, long period)
+             * Schedule a task for repeated fixed-delay
+             * execution after a specific delay.
+             * task	the task to schedule.
+             * when	time of first execution.
+             * period	amount of time in milliseconds
+             * between subsequent executions.
+             */
+            Log.d(LOG_TAG, "schedule period " + mBotSettings.getInterval()
+                + " first task " + timeFirstTask);
+            mTimer.schedule(mTimerTask, timeFirstTask,
                     mBotSettings.getInterval());
         }
     }
