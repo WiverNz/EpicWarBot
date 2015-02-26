@@ -66,11 +66,15 @@ public class MainService extends Service {
                 Locale.getDefault());
         String currTime = dateStringFormatter.format(currDate.getTime());
         String currText = currTime + ": " + addText;
-        if (!errorText.isEmpty()) {
+        if (errorText != null && !errorText.isEmpty()) {
             currText = currText + " " + errorText;
         }
         currText = currText + "\n";
-        mLogText = currText + mLogText;
+        if (mLogText == null) {
+            mLogText = currText;
+        } else {
+            mLogText = currText + mLogText;
+        }
     }
 
     /**
@@ -273,7 +277,8 @@ public class MainService extends Service {
             @Override
             public void run() {
                 Log.d(LOG_TAG, "IN TimerTask");
-                doAllBotTask();
+                addLogText("IN TimerTask", null);
+                //doAllBotTask();
             }
         };
         if (mTimer != null) {
