@@ -1,7 +1,10 @@
 package wivern.com.epicwarbot;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 //import android.os.RemoteException;
@@ -11,7 +14,9 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -45,6 +50,29 @@ public class MainService extends Service {
      * bot settings.
      */
     private BotServiceSettings mBotSettings;
+    /**
+     * log string.
+     */
+    private String mLogText;
+
+    /**
+     * add text to log.
+     * @param addText text to add
+     * @param errorText error text
+     */
+    private void addLogText(final String addText, final String errorText) {
+        Calendar currDate = Calendar.getInstance();
+        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
+                Locale.getDefault());
+        String currTime = dateStringFormatter.format(currDate.getTime());
+        String currText = currTime + ": " + addText;
+        if (!errorText.isEmpty()) {
+            currText = currText + " " + errorText;
+        }
+        currText = currText + "\n";
+        mLogText = currText + mLogText;
+    }
+
     /**
      * on create service.
      */
@@ -122,14 +150,33 @@ public class MainService extends Service {
             }
         }
 
+        @Override
+        public String getLogText() {
+            return mLogText;
+        }
+
     };
 
+    /**
+     * chec internet connection.
+     * @return true - internet is on
+     */
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        return ni != null;
+    }
     /**
      * do all bot task.
      */
     private void doAllBotTask() {
         synchronized (this) {
             Log.d(LOG_TAG, "IN doAllBotTask");
+            if (!isNetworkConnected()) {
+                Log.d(LOG_TAG, "There is no internet!");
+                addLogText("There is no internet!", null);
+            }
             AnswerInfo ai;
             ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
                     mBotSettings.getVkPassword());
@@ -174,6 +221,7 @@ public class MainService extends Service {
      * @param ai answer info
      */
     private void sendAnswerToClients(final AnswerInfo ai) {
+        addLogText(ai.getSzInfo(), ai.getError());
         int n = mCallbacks.beginBroadcast();
 
         for (int i = 0; i < n; i++) {

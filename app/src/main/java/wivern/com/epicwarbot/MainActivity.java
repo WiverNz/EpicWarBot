@@ -198,7 +198,7 @@ public class MainActivity extends Activity
         mEtVkLogin.setText("13602098361");
         mEtVkPassword.setText("");
         mEtInterval = (EditText) this.findViewById(R.id.etInterval);
-        mEtInterval.setText("2");
+        mEtInterval.setText("120");
         mHandler = new MHandler(this);
         mIntent = new Intent(this, MainService.class);
         mIntent.setAction("service.EpicWarBot");
@@ -316,7 +316,8 @@ public class MainActivity extends Activity
             currText = currText + " " + ai.getError();
         }
         currText = currText + "\n";
-        mEtTasksLog.append(currText, 0, currText.length());
+        mEtTasksLog.setText(currText + mEtTasksLog.getText().toString());
+        //mEtTasksLog.append(currText, 0, currText.length());
         //Toast.makeText(getApplicationContext(),
         //        result, Toast.LENGTH_SHORT).show();
     }
@@ -345,10 +346,14 @@ public class MainActivity extends Activity
                 mChbFlagCollectCemetery.setChecked(bss.getFlagCemetery());
                 mChbFlagSendReceiveGifts.setChecked(bss.getFlagGifts());
                 long interval = bss.getInterval()
-                        / (secInMin * minInHour * msInSec);
+                        / (secInMin * msInSec);
                 mEtInterval.setText(String.valueOf(interval));
             } else {
                 Log.d(LOG_TAG, "getServiceSettings result: null");
+            }
+            String logText = mServiceApi.getLogText();
+            if (mEtTasksLog.getText().toString().isEmpty()) {
+                mEtTasksLog.setText(logText);
             }
         } catch (RemoteException e) {
             Log.d(LOG_TAG, "getServiceSettings error: " + e.toString());
@@ -374,7 +379,7 @@ public class MainActivity extends Activity
         bss.setFlagCemetery(mChbFlagCollectCemetery.isChecked());
         bss.setFlagGifts(mChbFlagSendReceiveGifts.isChecked());
         long interval = Long.parseLong(mEtInterval.getText().toString())
-                * minInHour * secInMin * msInSec;
+                * secInMin * msInSec;
         bss.setInterval(interval);
         try {
             mServiceApi.setServiceSettings(bss);
