@@ -225,7 +225,7 @@ public class MainService extends Service {
             @Override
             public void run() {
                 Log.d(LOG_TAG, "IN TimerTask");
-                //doAllBotTask();
+                doAllBotTask();
             }
         };
         if (mTimer != null) {
