@@ -187,6 +187,7 @@
                     android:gravity="start"
                     android:scrollbars="vertical"
                     android:hint="@string/hintLog"
+                    android:textColor="#00FF00"
                     android:textSize="12sp"/>
             </TableRow>
             <TableRow

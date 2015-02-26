@@ -631,7 +631,7 @@ public class EpicWarBot {
                 }
                 JSONArray jAppFriends = jResponse.getJSONArray("appFriends");
                 for (int i = 0; i < jAppFriends.length(); i++) {
-                    long cjAppFriend = (Long) jAppFriends.get(i);
+                    int cjAppFriend = (int) jAppFriends.get(i);
 
                     appFriendsArray.add(String.valueOf(cjAppFriend));
                 }

@@ -51,7 +51,7 @@ public class MainService extends Service {
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
-        //final int proxyPort = 8888;
+        final int proxyPort = 8888;
         //EpicWarBot.setUseProxy(true);
         //EpicWarBot.setProxy("192.168.0.4", proxyPort);
         //EpicWarBot.testConnection();
