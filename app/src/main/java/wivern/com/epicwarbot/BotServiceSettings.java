@@ -32,11 +32,11 @@ public class BotServiceSettings implements Parcelable {
      * default interval for timer.
      * 1 minute
      */
-    private final long mDefInterval = 60 * 1000;
+    private final int mDefInterval = 60;
     /**
      * interval for timer.
      */
-    private long mInterval = mDefInterval;
+    private int mInterval = mDefInterval;
     /**
      * get vk login.
      * @return vk login
@@ -112,7 +112,7 @@ public class BotServiceSettings implements Parcelable {
      * get timer interval.
      * @return timer interval
      */
-    public final long getInterval() {
+    public final int getInterval() {
         return mInterval;
     }
 
@@ -120,14 +120,14 @@ public class BotServiceSettings implements Parcelable {
      * set timer interval.
      * @param interval timer interval
      */
-    public final void setInterval(final long interval) {
+    public final void setInterval(final int interval) {
         mInterval = interval;
     }
     /**
      * get default interval.
      * @return default interval
      */
-    public final long getDefInterval() {
+    public final int getDefInterval() {
         return mDefInterval;
     }
     /**
@@ -162,7 +162,7 @@ public class BotServiceSettings implements Parcelable {
         dest.writeInt(boolToInt(mFlagCollectResources));
         dest.writeInt(boolToInt(mFlagSendReceiveGifts));
         dest.writeInt(boolToInt(mFlagCollectCemetery));
-        dest.writeLong(mInterval);
+        dest.writeInt(mInterval);
     }
 
     /**
@@ -175,7 +175,7 @@ public class BotServiceSettings implements Parcelable {
         mFlagCollectResources = intToBool(in.readInt());
         mFlagSendReceiveGifts = intToBool(in.readInt());
         mFlagCollectCemetery = intToBool(in.readInt());
-        mInterval = in.readLong();
+        mInterval = in.readInt();
     }
 
     /**

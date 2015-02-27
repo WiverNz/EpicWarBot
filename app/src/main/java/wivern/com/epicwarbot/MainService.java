@@ -5,9 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
-//import android.os.RemoteException;
 /**
  * remo.
  */
@@ -54,13 +54,16 @@ public class MainService extends Service {
      * log string.
      */
     private String mLogText;
-
+    /**
+     * main task alarm.
+     */
+    private MainTaskAlarm mTaskAlarm;
     /**
      * add text to log.
      * @param addText text to add
      * @param errorText error text
      */
-    private void addLogText(final String addText, final String errorText) {
+    public final void addLogText(final String addText, final String errorText) {
         Calendar currDate = Calendar.getInstance();
         SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
                 Locale.getDefault());
@@ -89,7 +92,19 @@ public class MainService extends Service {
         //EpicWarBot.testConnection();
         mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
-        schedule();
+        restartMainTaskAlarm();
+        //schedule();
+    }
+
+    /**
+     * restart main task alarm.
+     */
+    public final void restartMainTaskAlarm() {
+        if (mBotSettings.getInterval() > 0) {
+            Bundle bundle = new Bundle();
+            mTaskAlarm = new MainTaskAlarm(this, bundle,
+                    mBotSettings.getInterval());
+        }
     }
 
     /**
@@ -117,7 +132,8 @@ public class MainService extends Service {
     private final IBotService.Stub mBinder = new IBotService.Stub() {
         @Override
         public IBinder asBinder() {
-            return null;
+            Log.d(LOG_TAG, "IBotService asBinder");
+            return this;
         }
 
         @Override
@@ -143,7 +159,7 @@ public class MainService extends Service {
         public void setServiceSettings(final BotServiceSettings settings) {
             synchronized (this) {
                 mBotSettings = settings;
-                schedule();
+                restartMainTaskAlarm();
             }
         }
 
@@ -157,6 +173,11 @@ public class MainService extends Service {
         @Override
         public String getLogText() {
             return mLogText;
+        }
+
+        @Override
+        public void restartTaskAlarm() {
+            restartMainTaskAlarm();
         }
 
     };
@@ -245,11 +266,12 @@ public class MainService extends Service {
      */
     @Override
     public final IBinder onBind(final Intent intent) {
+        Log.d(LOG_TAG, "onBind");
         return mBinder;
     }
 
     /**
-     * schedule for timer.
+     * schedule for timer (work only when application is opened).
      */
     public final void schedule() {
         Log.d(LOG_TAG, "IN schedule");
