@@ -197,46 +197,50 @@ public class MainService extends Service {
      */
     private void doAllBotTask() {
         synchronized (this) {
+            AnswerInfo ai;
             Log.d(LOG_TAG, "IN doAllBotTask");
             if (!isNetworkConnected()) {
-                Log.d(LOG_TAG, "There is no internet!");
-                addLogText("There is no internet!", null);
+                ai = new AnswerInfo("Connect error!", "", true,
+                        "There is no internet!");
+                sendAnswerToClients(ai);
+                return;
             }
-            AnswerInfo ai;
             ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
                     mBotSettings.getVkPassword());
-            sendAnswerToClients(ai);
             if (ai.isbError()) {
+                sendAnswerToClients(ai);
                 return;
             }
             ai = mEpicBot.gameConnect();
-            sendAnswerToClients(ai);
             if (ai.isbError()) {
+                sendAnswerToClients(ai);
                 Log.d(LOG_TAG, "gameConnect error");
                 return;
             }
             if (mBotSettings.getFlagResources()) {
                 ai = mEpicBot.collectAllResources();
-                sendAnswerToClients(ai);
                 if (ai.isbError()) {
+                    sendAnswerToClients(ai);
                     return;
                 }
             }
             if (mBotSettings.getFlagGifts()) {
                 mEpicBot.giftSend();
                 ai = mEpicBot.farmAllGifts();
-                sendAnswerToClients(ai);
                 if (ai.isbError()) {
+                    sendAnswerToClients(ai);
                     return;
                 }
             }
             if (mBotSettings.getFlagCemetery()) {
                 ai = mEpicBot.cemeteryFarm();
-                sendAnswerToClients(ai);
                 if (ai.isbError()) {
+                    sendAnswerToClients(ai);
                     return;
                 }
             }
+            ai = new AnswerInfo("All task completed!", "", false, "");
+            sendAnswerToClients(ai);
             mEpicBot.vkDisconnect();
         }
     }
@@ -258,6 +262,27 @@ public class MainService extends Service {
         }
         mCallbacks.finishBroadcast();
     }
+
+    /**
+     * describing how to continue the service if it is killed.
+     * @param intent The Intent supplied to startService(Intent), as given.
+     * @param flags Additional data about this start request.
+     *              Currently either 0, START_FLAG_REDELIVERY,
+     *              or START_FLAG_RETRY.
+     * @param startId A unique integer representing this specific request
+     *                to start. Use with stopSelfResult(int).
+     * @return  The return value indicates what semantics the system should use
+     *          for the service's current started state. It may be one of the
+     *          constants associated with the START_CONTINUATION_MASK bits.
+     *          May be START_STICKY, START_NOT_STICKY, START_REDELIVER_INTENT,
+     *          or START_STICKY_COMPATIBILITY.
+     */
+    @Override
+    public final int onStartCommand(final Intent intent, final int flags,
+                                    final int startId) {
+        return super.onStartCommand(intent, flags, startId);
+    }
+
     /**
      * on bind.
      *
@@ -272,6 +297,7 @@ public class MainService extends Service {
 
     /**
      * schedule for timer (work only when application is opened).
+     * not used (instead int task alarm)
      */
     public final void schedule() {
         Log.d(LOG_TAG, "IN schedule");
