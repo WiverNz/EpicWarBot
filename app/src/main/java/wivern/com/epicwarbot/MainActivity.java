@@ -345,7 +345,6 @@ public class MainActivity extends Activity
             return;
         }
         final int secInMin = 60;
-        final int minInHour = 60;
         BotServiceSettings bss;
         try {
             bss = mServiceApi.getServiceSettings();
@@ -387,7 +386,6 @@ public class MainActivity extends Activity
             return;
         }
         final int secInMin = 60;
-        final int minInHour = 60;
         BotServiceSettings bss = new BotServiceSettings();
         bss.setLoginAndPass(mEtVkLogin.getText().toString(),
                 mEtVkPassword.getText().toString());
@@ -521,7 +519,7 @@ public class MainActivity extends Activity
             super.handleMessage(msg);
             if (mActivity != null) {
                 MsgId currMsgId = MsgId.values()[msg.what];
-                Bundle sendData = null;
+                Bundle sendData;
                 switch (currMsgId) {
                     case TASK_RESULT:
                         sendData = msg.getData();

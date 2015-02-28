@@ -82,6 +82,9 @@ public class MainService extends Service {
 
     /**
      * on create service.
+     * when phone connect to logcat (Android studio)
+     * a service restart every 30 minutes for free memory, so it call
+     * onCreate without onDestroy or onStartCommand
      */
     public final void onCreate() {
         super.onCreate();
