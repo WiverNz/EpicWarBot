@@ -23,8 +23,8 @@ interface IBotService {
     void setServiceSettings(in BotServiceSettings settings);
     // get service settings (when recreate activity) (sync)
     BotServiceSettings getServiceSettings();
-    // get log text (sync).
-    String getLogText();
+    // get log text (async).
+    oneway void getLogText();
     // restart task alarm (async).
     oneway void restartTaskAlarm();
 }

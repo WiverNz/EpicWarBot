@@ -85,7 +85,7 @@ public class MainService extends Service {
      */
     public final void onCreate() {
         super.onCreate();
-        Log.d(LOG_TAG, "IN onCreate");
+        Log.d(LOG_TAG, "IN onCreate " + mEpicBot);
         final int proxyPort = 8888;
         //EpicWarBot.setUseProxy(true);
         //EpicWarBot.setProxy("192.168.0.4", proxyPort);
@@ -100,6 +100,7 @@ public class MainService extends Service {
      * restart main task alarm.
      */
     public final void restartMainTaskAlarm() {
+        Log.d(LOG_TAG, "IN restartMainTaskAlarm");
         if (mBotSettings.getInterval() > 0) {
             Bundle bundle = new Bundle();
             mTaskAlarm = new MainTaskAlarm(this, bundle,
@@ -171,8 +172,10 @@ public class MainService extends Service {
         }
 
         @Override
-        public String getLogText() {
-            return mLogText;
+        public void getLogText() {
+            synchronized (this) {
+                sendLogToClients(mLogText);
+            }
         }
 
         @Override
@@ -257,12 +260,27 @@ public class MainService extends Service {
             try {
                 mCallbacks.getBroadcastItem(i).onTaskResult(ai);
             } catch (RemoteException e) {
-                Log.d(LOG_TAG, "onTaskResult error: " + e.toString());
+                Log.d(LOG_TAG, "sendAnswerToClients error: " + e.toString());
             }
         }
         mCallbacks.finishBroadcast();
     }
+    /**
+     * send log text to all clients.
+     * @param logText log text
+     */
+    private void sendLogToClients(final String logText) {
+        int n = mCallbacks.beginBroadcast();
 
+        for (int i = 0; i < n; i++) {
+            try {
+                mCallbacks.getBroadcastItem(i).onGetLog(logText);
+            } catch (RemoteException e) {
+                Log.d(LOG_TAG, "sendLogToClients error: " + e.toString());
+            }
+        }
+        mCallbacks.finishBroadcast();
+    }
     /**
      * describing how to continue the service if it is killed.
      * @param intent The Intent supplied to startService(Intent), as given.
@@ -280,7 +298,9 @@ public class MainService extends Service {
     @Override
     public final int onStartCommand(final Intent intent, final int flags,
                                     final int startId) {
-        return super.onStartCommand(intent, flags, startId);
+        int superRetStatus = super.onStartCommand(intent, flags, startId);
+        Log.d(LOG_TAG, "IN onStartCommand " + superRetStatus);
+        return superRetStatus;
     }
 
     /**

@@ -62,9 +62,13 @@ public class MainActivity extends Activity
          */
         GET_SETTINGS(3),
         /**
+         * set log text.
+         */
+        SET_LOG_TEXT(4),
+        /**
          * disconnected msg.
          */
-        DISCONNECT(4);
+        DISCONNECT(5);
         /**
          * int value.
          */
@@ -251,9 +255,18 @@ public class MainActivity extends Activity
                     @Override
                     public void onTaskResult(final AnswerInfo result) {
                         Message msg = new Message();
-                        msg.what = 1;
+                        msg.what = MsgId.TASK_RESULT.getValue();
                         Bundle sendData = new Bundle();
                         sendData.putParcelable("AnswerInfo", result);
+                        msg.setData(sendData);
+                        mHandler.sendMessage(msg);
+                    }
+                    @Override
+                    public void onGetLog(final String logText) {
+                        Message msg = new Message();
+                        msg.what = MsgId.SET_LOG_TEXT.getValue();
+                        Bundle sendData = new Bundle();
+                        sendData.putString("logText", logText);
                         msg.setData(sendData);
                         mHandler.sendMessage(msg);
                     }
@@ -337,7 +350,7 @@ public class MainActivity extends Activity
         try {
             bss = mServiceApi.getServiceSettings();
             if (bss != null) {
-                Log.d(LOG_TAG, "getServiceSettings result: "
+                Log.d(LOG_TAG, "getServiceSettings login result: "
                         + bss.getVkLogin());
                 mEtVkLogin.setText(bss.getVkLogin());
                 mEtVkPassword.setText(bss.getVkPassword());
@@ -350,15 +363,20 @@ public class MainActivity extends Activity
             } else {
                 Log.d(LOG_TAG, "getServiceSettings result: null");
             }
-            String logText = mServiceApi.getLogText();
-            if (mEtTasksLog.getText().toString().isEmpty()) {
-                mEtTasksLog.setText(logText);
-            }
+            mServiceApi.getLogText();
         } catch (RemoteException e) {
             Log.d(LOG_TAG, "getServiceSettings error: " + e.toString());
         }
     }
-
+    /**
+     * set log from service.
+     * @param logText log text
+     */
+    private void setLogFromService(final String logText) {
+        if (mEtTasksLog.getText().toString().isEmpty()) {
+            mEtTasksLog.setText(logText);
+        }
+    }
     /**
      * set params from main activity to service.
      * this must be in main activity thread
@@ -503,9 +521,10 @@ public class MainActivity extends Activity
             super.handleMessage(msg);
             if (mActivity != null) {
                 MsgId currMsgId = MsgId.values()[msg.what];
+                Bundle sendData = null;
                 switch (currMsgId) {
                     case TASK_RESULT:
-                        Bundle sendData = msg.getData();
+                        sendData = msg.getData();
                         if (sendData != null) {
                             AnswerInfo ai =
                                     sendData.getParcelable("AnswerInfo");
@@ -519,6 +538,16 @@ public class MainActivity extends Activity
                         break;
                     case SET_SETTINGS:
                         mActivity.setParamsToService();
+                        break;
+                    case SET_LOG_TEXT:
+                        sendData = msg.getData();
+                        if (sendData != null) {
+                            String logText =
+                                    sendData.getString("logText");
+                            if (logText != null) {
+                                mActivity.setLogFromService(logText);
+                            }
+                        }
                         break;
                     default:
                         break;
