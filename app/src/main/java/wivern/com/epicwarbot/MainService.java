@@ -3,6 +3,7 @@ package wivern.com.epicwarbot;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -89,16 +90,74 @@ public class MainService extends Service {
     public final void onCreate() {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate " + mEpicBot);
-        final int proxyPort = 8888;
+        addLogText("Restart service", null);
+        //final int proxyPort = 8888;
         //EpicWarBot.setUseProxy(true);
         //EpicWarBot.setProxy("192.168.0.4", proxyPort);
         //EpicWarBot.testConnection();
         mEpicBot = new EpicWarBot();
         mBotSettings = new BotServiceSettings();
+        mBotSettings = readSettingsFromPreferences();
         restartMainTaskAlarm();
         //schedule();
     }
 
+    /**
+     * read settings from preferences.
+     * @return preferences.
+     */
+    private BotServiceSettings readSettingsFromPreferences() {
+        Log.d(LOG_TAG, "IN readSettingsFromPreferences");
+        BotServiceSettings bss = new BotServiceSettings();
+        SharedPreferences sPref = getSharedPreferences("BotSettings",
+                MODE_PRIVATE);
+        String decPassword = decryptPassword(sPref.getString("PASSWORD", ""));
+        bss.setLoginAndPass(sPref.getString("LOGIN", ""), decPassword);
+        bss.setFlagResources(sPref.getBoolean("RESOURCES", false));
+        bss.setFlagCemetery(sPref.getBoolean("CEMETERY", false));
+        bss.setFlagGifts(sPref.getBoolean("GIFTS", false));
+        bss.setInterval(sPref.getInt("INTERVAL", 0));
+
+        return bss;
+    }
+
+    /**
+     * save settings to preferences.
+     * @param bss bot settings
+     */
+    private void saveSettingsToPreferences(
+            final BotServiceSettings bss) {
+        Log.d(LOG_TAG, "IN saveSettingsToPreferences");
+        SharedPreferences sPref = getSharedPreferences("BotSettings",
+                MODE_PRIVATE);
+        SharedPreferences.Editor ed = sPref.edit();
+        ed.putString("LOGIN", bss.getVkLogin());
+        String encPassword = encryptPassword(bss.getVkPassword());
+        ed.putString("PASSWORD", encPassword);
+        ed.putBoolean("RESOURCES", bss.getFlagResources());
+        ed.putBoolean("CEMETERY", bss.getFlagCemetery());
+        ed.putBoolean("GIFTS", bss.getFlagGifts());
+        ed.putInt("INTERVAL", bss.getInterval());
+        ed.apply();
+    }
+
+    /**
+     * decrypt password.
+     * @param src encrypted password
+     * @return decrypted password
+     */
+    private String decryptPassword(final String src) {
+        return SimpleDESCryptoProvider.decrypt(src);
+    }
+
+    /**
+     * encrypt password.
+     * @param src decrypted password
+     * @return encrypted password
+     */
+    private String encryptPassword(final String src) {
+        return SimpleDESCryptoProvider.encrypt(src);
+    }
     /**
      * restart main task alarm.
      */
@@ -110,7 +169,6 @@ public class MainService extends Service {
                     mBotSettings.getInterval());
         }
     }
-
     /**
      * on destroy service.
      */
@@ -121,6 +179,9 @@ public class MainService extends Service {
         if (mTimer != null) {
             mTimer.cancel();
             mTimer = null;
+        }
+        if (mTaskAlarm != null) {
+            mTaskAlarm = null;
         }
     }
 
@@ -163,6 +224,7 @@ public class MainService extends Service {
         public void setServiceSettings(final BotServiceSettings settings) {
             synchronized (this) {
                 mBotSettings = settings;
+                saveSettingsToPreferences(mBotSettings);
                 restartMainTaskAlarm();
             }
         }

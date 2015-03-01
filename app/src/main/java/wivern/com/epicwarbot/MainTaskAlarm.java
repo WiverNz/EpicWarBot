@@ -56,6 +56,7 @@ public class MainTaskAlarm extends BroadcastReceiver {
     }
 
     /**
+     * on receive.
      * @param context context
      * @param intent  intent
      */
@@ -65,6 +66,13 @@ public class MainTaskAlarm extends BroadcastReceiver {
         // here you can get the extras you passed in when creating the alarm
         //intent.getBundleExtra(REMINDER_BUNDLE));
         //addLogText("IN TimerTask", null);
+        /**
+         * better chose not to use eternal service (because of memory and
+         * restart service from system) - much better to use onStartCommand
+         * (do all task in it) and keep bot settings in mysql (for several
+         * users and for logs (keep only last 20)) - read this settings on
+         * start the service.
+         */
         Log.d(LOG_TAG, "IN onReceive");
         Intent mIntent = new Intent(context, MainService.class);
         mIntent.setAction("service.EpicWarBot");
@@ -76,7 +84,7 @@ public class MainTaskAlarm extends BroadcastReceiver {
                 mServiceApi.restartTaskAlarm();
             } catch (RemoteException e) {
                 Log.d(LOG_TAG, "onReceive doAllTask RemoteException: "
-                + e.toString());
+                        + e.toString());
             }
         } else {
             Log.d(LOG_TAG, "IN onReceive binder = null");

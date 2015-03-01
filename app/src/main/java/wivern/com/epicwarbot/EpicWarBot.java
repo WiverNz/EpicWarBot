@@ -394,7 +394,7 @@ public class EpicWarBot {
                                       final String vkPassword) {
         AnswerInfo retResult = new AnswerInfo();
         init(false);
-        Log.d(LOG_TAG, "vkConnect: " + vkLogin + " " + vkPassword);
+        Log.d(LOG_TAG, "vkConnect: " + vkLogin);
         final String urlPath = "http://login.vk.com/";
         HashMap<String, Object> cSendData = new HashMap<>();
 
