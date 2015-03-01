@@ -89,7 +89,7 @@ public class MainService extends Service {
      */
     public final void onCreate() {
         super.onCreate();
-        Log.d(LOG_TAG, "IN onCreate " + mEpicBot);
+        Log.d(LOG_TAG, "IN onCreate");
         addLogText("Restart service", null);
         //final int proxyPort = 8888;
         //EpicWarBot.setUseProxy(true);
@@ -147,7 +147,14 @@ public class MainService extends Service {
      * @return decrypted password
      */
     private String decryptPassword(final String src) {
-        return SimpleDESCryptoProvider.decrypt(src);
+        String resultStr = "";
+        try {
+            SimpleDESCryptoProvider sDesProv = new SimpleDESCryptoProvider();
+            resultStr = sDesProv.decrypt(src);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultStr;
     }
 
     /**
@@ -156,7 +163,14 @@ public class MainService extends Service {
      * @return encrypted password
      */
     private String encryptPassword(final String src) {
-        return SimpleDESCryptoProvider.encrypt(src);
+        String resultStr = "";
+        try {
+            SimpleDESCryptoProvider sDesProv = new SimpleDESCryptoProvider();
+            resultStr = sDesProv.encrypt(src);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultStr;
     }
     /**
      * restart main task alarm.
