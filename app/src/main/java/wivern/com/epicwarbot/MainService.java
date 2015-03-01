@@ -27,10 +27,6 @@ import java.util.TimerTask;
  */
 public class MainService extends Service {
     /**
-     * main bot object.
-     */
-    private static EpicWarBot mEpicBot;
-    /**
      * tag for log.
      */
     private static final String LOG_TAG = "BotService";
@@ -91,12 +87,6 @@ public class MainService extends Service {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
         addLogText("Restart service", null);
-        //final int proxyPort = 8888;
-        //EpicWarBot.setUseProxy(true);
-        //EpicWarBot.setProxy("192.168.0.4", proxyPort);
-        //EpicWarBot.testConnection();
-        mEpicBot = new EpicWarBot();
-        mBotSettings = new BotServiceSettings();
         mBotSettings = readSettingsFromPreferences();
         restartMainTaskAlarm();
         //schedule();
@@ -279,6 +269,14 @@ public class MainService extends Service {
      */
     private void doAllBotTask() {
         synchronized (this) {
+            /**
+             * main bot object.
+             */
+            EpicWarBot mEpicBot = new EpicWarBot();
+            //final int proxyPort = 8888;
+            //EpicWarBot.setUseProxy(true);
+            //EpicWarBot.setProxy("192.168.0.4", proxyPort);
+            //EpicWarBot.testConnection();
             AnswerInfo ai;
             Log.d(LOG_TAG, "IN doAllBotTask");
             if (!isNetworkConnected()) {
