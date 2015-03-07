@@ -15,4 +15,5 @@
     <string name="chbFlagCollectCemetery">Collect cemetery</string>
     <string name="tvInterval">Interval</string>
     <string name="hintLog">log</string>
+    <string name="icon">icon</string>
 </resources>

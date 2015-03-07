@@ -1,5 +1,7 @@
 package wivern.com.epicwarbot;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +16,7 @@ import android.os.RemoteCallbackList;
  */
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -36,6 +39,10 @@ public class MainService extends Service {
     private final RemoteCallbackList<IBotServiceCallback> mCallbacks
             = new RemoteCallbackList<>();
     /**
+     * notify icon status.
+     */
+    private static final int PLAYBACK_SERVICE_STATUS = 1;
+    /**
      * main timer.
      */
     private Timer mTimer;
@@ -56,13 +63,17 @@ public class MainService extends Service {
      */
     private MainTaskAlarm mTaskAlarm;
     /**
+     * last time of doAllTasks.
+     */
+    private Calendar mLastDoAllTasks;
+    /**
      * add text to log.
      * @param addText text to add
      * @param errorText error text
      */
     public final void addLogText(final String addText, final String errorText) {
         Calendar currDate = Calendar.getInstance();
-        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
+        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("HH:mm:ss",
                 Locale.getDefault());
         String currTime = dateStringFormatter.format(currDate.getTime());
         String currText = currTime + ": " + addText;
@@ -90,6 +101,7 @@ public class MainService extends Service {
         mBotSettings = readSettingsFromPreferences();
         restartMainTaskAlarm();
         //schedule();
+        updateNotification();
     }
 
     /**
@@ -268,6 +280,8 @@ public class MainService extends Service {
      * do all bot task.
      */
     private void doAllBotTask() {
+        mLastDoAllTasks = Calendar.getInstance();
+        updateNotification();
         synchronized (this) {
             /**
              * main bot object.
@@ -392,6 +406,34 @@ public class MainService extends Service {
         return mBinder;
     }
 
+    /**
+     * update notification.
+     */
+    private void updateNotification() {
+        Intent mIntent = new Intent(this, MainService.class);
+        mIntent.setAction("service.EpicWarBot");
+        RemoteViews views = new RemoteViews(getPackageName(),
+                R.layout.statusbar);
+        views.setImageViewResource(R.id.icon,
+                R.drawable.ic_launcher);
+        views.setTextViewText(R.id.logText, "EpicWarBot");
+        if (mLastDoAllTasks == null) {
+            views.setTextViewText(R.id.lastUpdate, "Last task: ");
+        } else {
+            SimpleDateFormat dateStringFormatter =
+                    new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+            String currTime =
+                    dateStringFormatter.format(mLastDoAllTasks.getTime());
+            views.setTextViewText(R.id.lastUpdate, "Last tasks: " + currTime);
+        }
+        Notification status = new Notification();
+        status.contentView = views;
+        status.flags |= Notification.FLAG_ONGOING_EVENT;
+        status.icon = R.drawable.ic_launcher;
+        status.contentIntent = PendingIntent.getActivity(this, 0,
+                mIntent, 0);
+        startForeground(PLAYBACK_SERVICE_STATUS, status);
+    }
     /**
      * schedule for timer (work only when application is opened).
      * not used (instead int task alarm)

@@ -321,7 +321,7 @@ public class MainActivity extends Activity
     public final void onTaskResult(final AnswerInfo ai) {
         String result = ai.getSzInfo();
         Calendar currDate = Calendar.getInstance();
-        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("hh.mm.ss",
+        SimpleDateFormat dateStringFormatter = new SimpleDateFormat("HH:mm:ss",
                 Locale.getDefault());
         String currTime = dateStringFormatter.format(currDate.getTime());
         String currText = currTime + ": " + result;
@@ -489,7 +489,6 @@ public class MainActivity extends Activity
         }
         return false;
     }
-
     /**
      * @since 1.0
      * handler class
