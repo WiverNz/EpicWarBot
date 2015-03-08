@@ -410,8 +410,7 @@ public class MainService extends Service {
      * update notification.
      */
     private void updateNotification() {
-        Intent mIntent = new Intent(this, MainService.class);
-        mIntent.setAction("service.EpicWarBot");
+        Intent mIntent = new Intent(this, MainActivity.class);
         RemoteViews views = new RemoteViews(getPackageName(),
                 R.layout.statusbar);
         views.setImageViewResource(R.id.icon,
