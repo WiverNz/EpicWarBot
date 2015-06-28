@@ -395,15 +395,44 @@ public class EpicWarBot {
         AnswerInfo retResult = new AnswerInfo();
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
-        final String urlPath = "http://login.vk.com/";
+		final String newUrlPath = "http://vk.com";
+        final String urlPath = "https://login.vk.com/?act=login";
         HashMap<String, Object> cSendData = new HashMap<>();
-
+		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
+                mCookieManager, false, false);
+        String lg_h = "";
+        String ip_h = "";
+		if (retDictNew.getStatus() == Status.SUCCESS) {
+            ip_h = getTextForPattern(retDictNew.getResponseStr(),
+                    "<input type=\"hidden\" name=\"ip_h\" value=\"(.*?)\"\\s*/>");
+            lg_h = getTextForPattern(retDictNew.getResponseStr(),
+                    "<input type=\"hidden\" name=\"lg_h\" value=\"(.*?)\"\\s*/>");
+            if (ip_h.isEmpty() || lg_h.isEmpty()) {
+                retResult.set("ip_h lg_h empty",
+                        retDictNew.getStatus().toString(),
+                        true, "");
+                return retResult;
+            }
+		}
+		else {
+            retResult.set("Error connect to vk.com",
+                    retDictNew.getStatus().toString(),
+                    true, newUrlPath);
+			return retResult;
+		}
+        cSendData.put("act", "login");
+        cSendData.put("role", "al_frame");
+        cSendData.put("ip_h", ip_h);
+        cSendData.put("lg_h", lg_h);
         cSendData.put("email", vkLogin);
         cSendData.put("pass", vkPassword);
-        cSendData.put("act", "login");
-        cSendData.put("amp;to", "&amp;");
+        cSendData.put("expire", "");
+        cSendData.put("captcha_sid", "");
+        cSendData.put("captcha_key", "");
+        cSendData.put("_origin", "http://vk.com");
+        cSendData.put("q", 1);
 
-        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "POST", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
             HashMap<String, String> vkPairs = findPairsInText(
@@ -1405,6 +1434,26 @@ public class EpicWarBot {
             }
         }
         return retPairs;
+    }
+
+    /**
+     * get text for pattern.
+     *
+     * @param inputText
+     * @param inputPattern
+     * @return text
+     */
+    public static String getTextForPattern(final String inputText,
+                                           final String inputPattern) {
+        String retStr = "";
+        final Pattern patternPair = Pattern.compile(inputPattern,
+                Pattern.CASE_INSENSITIVE);
+        Matcher matchesBlock = patternPair.matcher(inputText);
+        if (matchesBlock.find()) {
+            retStr = matchesBlock.group(1);
+        }
+
+        return retStr;
     }
 
     /**
