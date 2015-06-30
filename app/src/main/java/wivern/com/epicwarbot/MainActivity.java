@@ -200,7 +200,7 @@ public class MainActivity extends Activity
         mEtVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
         mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
         mEtVkLogin.setText("13602098361");
-        mEtVkPassword.setText("");
+        mEtVkPassword.setText("84egutes");
         mEtInterval = (EditText) this.findViewById(R.id.etInterval);
         mEtInterval.setText("120");
         mHandler = new MHandler(this);

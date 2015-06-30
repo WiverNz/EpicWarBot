@@ -396,7 +396,7 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "https://login.vk.com/?act=login";
+        final String urlPath = "https://login.vk.com";
         HashMap<String, Object> cSendData = new HashMap<>();
 		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
@@ -435,11 +435,13 @@ public class EpicWarBot {
         ReturnData retDict = getPost(urlPath, "POST", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
-            HashMap<String, String> vkPairs = findPairsInText(
-                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
-                    "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
-            if (vkPairs.containsKey("id")) {
-                mVkId = vkPairs.get("id");
+            mVkId = getTextForPattern(retDictNew.getResponseStr(),
+                    "parent.onLoginDone('/id(.*?)');");
+//            HashMap<String, String> vkPairs = findPairsInText(
+//                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
+//                    "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
+            if (true) {
+                //mVkId = vkPairs.get("id");
                 if (!mVkId.equals("0")) {
                     mVkConnected = true;
                     retResult.set("VK Connected! vk id: " + mVkId,
@@ -452,12 +454,14 @@ public class EpicWarBot {
                 }
             } else {
                 retResult.set("Not connected!", retDict.getStatus().toString(),
-                        true, "Authorization problem: var vk id not found!");
+                        true, "Authorization problem: var vk id not found! " + retDict.getResponseStr());
             }
         } else {
+            Log.d(LOG_TAG, "retStatus = " + retDict.getStatus().toString());
             Log.d(LOG_TAG, retDict.getErrorMsg());
             retResult.set("Not connected!", retDict.getStatus().toString(),
-                    true, "retDict.getStatus() != Status.SUCCESS");
+                    true, "retDict.getStatus() != Status.SUCCESS "
+                            + retDict.getStatus().toString());
         }
         return retResult;
     }
