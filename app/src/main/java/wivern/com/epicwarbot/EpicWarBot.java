@@ -396,7 +396,7 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "https://login.vk.com";
+        final String urlPath = "http://login.vk.com/";
         HashMap<String, Object> cSendData = new HashMap<>();
 		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
@@ -432,17 +432,17 @@ public class EpicWarBot {
         cSendData.put("_origin", "http://vk.com");
         cSendData.put("q", 1);
 
-        ReturnData retDict = getPost(urlPath, "POST", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
-            mVkId = getTextForPattern(retDictNew.getResponseStr(),
-                    "parent.onLoginDone('/id(.*?)');");
+            mVkId = getTextForPattern(retDict.getResponseStr(),
+                    "parent.onLoginDone\\('/id(.*?)'\\);");
 //            HashMap<String, String> vkPairs = findPairsInText(
 //                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
 //                    "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
             if (true) {
                 //mVkId = vkPairs.get("id");
-                if (!mVkId.equals("0")) {
+                if (!mVkId.equals("")) {
                     mVkConnected = true;
                     retResult.set("VK Connected! vk id: " + mVkId,
                             retDict.getStatus().toString(),
@@ -450,7 +450,7 @@ public class EpicWarBot {
                 } else {
                     retResult.set("Not connected!",
                             retDict.getStatus().toString(),
-                            true, "Authorization problem: vkId == 0");
+                            true, "Authorization problem: vkId == 0 " + retDict.getResponseStr());
                 }
             } else {
                 retResult.set("Not connected!", retDict.getStatus().toString(),
@@ -503,7 +503,7 @@ public class EpicWarBot {
      */
     public final AnswerInfo gameConnect() {
         final int refId = 9;
-        final int rndVer = 32546;
+        final int rndVer = 237;
         final int al = -1;
         Log.d(LOG_TAG, "GameConnect");
         AnswerInfo retResult = new AnswerInfo();
@@ -549,6 +549,7 @@ public class EpicWarBot {
                     }
                     cSendData.put(cKey, cVal);
                 }
+                cSendData.put("hash", "");
                 mSid = (String) cSendData.get("sid");
                 retDict = getPost(iUrl, "GET", cSendData, cSendHeaders,
                         mCookieManager, false, false);

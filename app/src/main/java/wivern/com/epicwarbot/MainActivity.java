@@ -200,7 +200,7 @@ public class MainActivity extends Activity
         mEtVkLogin = (EditText) this.findViewById(R.id.etVkLogin);
         mEtVkPassword = (EditText) this.findViewById(R.id.etVkPassword);
         mEtVkLogin.setText("13602098361");
-        mEtVkPassword.setText("84egutes");
+        mEtVkPassword.setText("");
         mEtInterval = (EditText) this.findViewById(R.id.etInterval);
         mEtInterval.setText("120");
         mHandler = new MHandler(this);
@@ -330,6 +330,10 @@ public class MainActivity extends Activity
         }
         currText = currText + "\n";
         mEtTasksLog.setText(currText + mEtTasksLog.getText().toString());
+        if(ai.isbError())
+        {
+            Log.d(LOG_TAG, ai.getSzInfo() + " :: " + ai.getError());
+        }
         //mEtTasksLog.append(currText, 0, currText.length());
         //Toast.makeText(getApplicationContext(),
         //        result, Toast.LENGTH_SHORT).show();

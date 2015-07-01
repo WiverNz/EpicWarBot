@@ -298,9 +298,9 @@ public class MainService extends Service {
              * main bot object.
              */
             EpicWarBot mEpicBot = new EpicWarBot();
-            final int proxyPort = 8888;
-            EpicWarBot.setUseProxy(true);
-            EpicWarBot.setProxy("192.168.0.4", proxyPort);
+//            final int proxyPort = 8888;
+//            EpicWarBot.setUseProxy(true);
+//            EpicWarBot.setProxy("192.168.0.4", proxyPort);
             //EpicWarBot.testConnection();
             AnswerInfo ai;
             Log.d(LOG_TAG, "IN doAllBotTask");
