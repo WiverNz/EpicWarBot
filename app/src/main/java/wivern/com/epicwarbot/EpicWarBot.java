@@ -396,7 +396,7 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "http://login.vk.com/";
+        final String urlPath = "https://login.vk.com/?act=login";
         HashMap<String, Object> cSendData = new HashMap<>();
 		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
@@ -432,15 +432,17 @@ public class EpicWarBot {
         cSendData.put("_origin", "http://vk.com");
         cSendData.put("q", 1);
 
-        ReturnData retDict = getPost(urlPath, "GET", cSendData, null,
+        ReturnData retDict = getPost(urlPath, "POST", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
             mVkId = getTextForPattern(retDict.getResponseStr(),
                     "parent.onLoginDone\\('/id(.*?)'\\);");
+            String idCaptcha = getTextForPattern(retDict.getResponseStr(),
+                    "parent.onLoginCaptcha\\('(.*?)','.*?'\\);");
 //            HashMap<String, String> vkPairs = findPairsInText(
 //                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
 //                    "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
-            if (true) {
+            if (idCaptcha.equals("")) {
                 //mVkId = vkPairs.get("id");
                 if (!mVkId.equals("")) {
                     mVkConnected = true;
@@ -454,7 +456,7 @@ public class EpicWarBot {
                 }
             } else {
                 retResult.set("Not connected!", retDict.getStatus().toString(),
-                        true, "Authorization problem: var vk id not found! " + retDict.getResponseStr());
+                        true, "Authorization problem: captcha found!");
             }
         } else {
             Log.d(LOG_TAG, "retStatus = " + retDict.getStatus().toString());
