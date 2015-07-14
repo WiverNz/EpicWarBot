@@ -67,6 +67,18 @@ public class MainService extends Service {
      */
     private Calendar mLastDoAllTasks;
     /**
+     * last captcha sid for vk login.
+     */
+    private String lastCaptchaSid = "";
+    /**
+     * last captcha key for vk login.
+     */
+    private String lastCaptchaKey = "";
+    /**
+     * main bot object.
+     */
+    EpicWarBot mEpicBot;
+    /**
      * add text to log.
      * @param addText text to add
      * @param errorText error text
@@ -237,12 +249,22 @@ public class MainService extends Service {
         }
 
         @Override
+        public void initVkConnection() throws RemoteException {
+            initializeVkConnection();
+        }
+
+        @Override
         public void setServiceSettings(final BotServiceSettings settings) {
             synchronized (this) {
                 mBotSettings = settings;
                 saveSettingsToPreferences(mBotSettings);
                 restartMainTaskAlarm();
             }
+        }
+
+        @Override
+        public void setCurrServiceCaptcha(String captchaKey) {
+            lastCaptchaKey = captchaKey;
         }
 
         @Override
@@ -288,34 +310,45 @@ public class MainService extends Service {
         return true;
     }
     /**
-     * do all bot task.
+     * init vk connection.
      */
-    private void doAllBotTask() {
-        mLastDoAllTasks = Calendar.getInstance();
-        updateNotification();
-        synchronized (this) {
-            /**
-             * main bot object.
-             */
-            EpicWarBot mEpicBot = new EpicWarBot();
+    private void initializeVkConnection() {
+        Log.d(LOG_TAG, "IN initializeVkConnection");
+        mEpicBot = new EpicWarBot();
 //            final int proxyPort = 8888;
 //            EpicWarBot.setUseProxy(true);
 //            EpicWarBot.setProxy("192.168.0.4", proxyPort);
-            //EpicWarBot.testConnection();
-            AnswerInfo ai;
-            Log.d(LOG_TAG, "IN doAllBotTask");
-            if (!isNetworkConnected()) {
-                ai = new AnswerInfo("Connect error!", "", true,
-                        "There is no internet!");
-                sendAnswerToClients(ai);
-                return;
-            }
-            ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
-                    mBotSettings.getVkPassword());
-            if (ai.isbError()) {
-                sendAnswerToClients(ai);
-                return;
-            }
+//        final int proxyPort = 8089;
+//        EpicWarBot.setUseProxy(true);
+//        EpicWarBot.setProxy("136.0.16.217", proxyPort);
+        //EpicWarBot.testConnection();
+        AnswerInfo ai;
+        if (!isNetworkConnected()) {
+            ai = new AnswerInfo("Connect error!", "", true,
+                    "There is no internet!");
+            sendAnswerToClients(ai);
+            return;
+        }
+        ai = mEpicBot.vkConnect(mBotSettings.getVkLogin(),
+                mBotSettings.getVkPassword(), lastCaptchaSid, lastCaptchaKey);
+        if(ai.isbError() && ai.getSzInfo().contains("CAPTCHA")) {
+            lastCaptchaSid = ai.getRetValue("CAPTCHA");
+            requestCaptchaFromUser(lastCaptchaSid);
+        }
+        else if (ai.isbError()) {
+            sendAnswerToClients(ai);
+            return;
+        }
+    }
+    /**
+     * do all bot task.
+     */
+    private void doAllBotTask() {
+        AnswerInfo ai;
+        Log.d(LOG_TAG, "IN doAllBotTask");
+        mLastDoAllTasks = Calendar.getInstance();
+        updateNotification();
+        synchronized (this) {
             ai = mEpicBot.gameConnect();
             if (ai.isbError()) {
                 sendAnswerToClients(ai);
@@ -346,7 +379,6 @@ public class MainService extends Service {
             }
             ai = new AnswerInfo("All task completed!", "", false, "");
             sendAnswerToClients(ai);
-            mEpicBot.vkDisconnect();
         }
     }
 
@@ -361,6 +393,23 @@ public class MainService extends Service {
         for (int i = 0; i < n; i++) {
             try {
                 mCallbacks.getBroadcastItem(i).onTaskResult(ai);
+            } catch (RemoteException e) {
+                Log.d(LOG_TAG, "sendAnswerToClients error: " + e.toString());
+            }
+        }
+        mCallbacks.finishBroadcast();
+    }
+
+    /**
+     * request captcha from user.
+     * @param captchaSid captcha sid
+     */
+    private void requestCaptchaFromUser(final String captchaSid) {
+        int n = mCallbacks.beginBroadcast();
+
+        for (int i = 0; i < n; i++) {
+            try {
+                mCallbacks.getBroadcastItem(i).onCaptcha(captchaSid);
             } catch (RemoteException e) {
                 Log.d(LOG_TAG, "sendAnswerToClients error: " + e.toString());
             }

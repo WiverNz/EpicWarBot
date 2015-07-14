@@ -19,8 +19,10 @@ interface IBotService {
     void removeCallback(in IBotServiceCallback listener);
     // do all bot task (async)
     oneway void doAllTask();
+    oneway void initVkConnection();
     // set service settings (vk login, pass, timer, flags) (sync)
     void setServiceSettings(in BotServiceSettings settings);
+    void setCurrServiceCaptcha(in String captchaKey);
     // get service settings (when recreate activity) (sync)
     BotServiceSettings getServiceSettings();
     // get log text (async).

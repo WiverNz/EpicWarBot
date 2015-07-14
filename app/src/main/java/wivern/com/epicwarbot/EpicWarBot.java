@@ -41,6 +41,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import static android.os.Debug.*;
+
 /**
  * @since 1.0
  * bot class
@@ -303,7 +305,7 @@ public class EpicWarBot {
     /**
      * default connection timeout.
      */
-    private static final int DEFAULT_CONNECTION_TIMEOUT = 1000;
+    private static final int DEFAULT_CONNECTION_TIMEOUT = 10000;
     /**
      * default read timeout.
      */
@@ -388,15 +390,19 @@ public class EpicWarBot {
      *
      * @param vkLogin    login
      * @param vkPassword password
+     * @param captchaSid captcha sid
+     * @param captchaKey captcha key
      * @return answer info structure
      */
     public final AnswerInfo vkConnect(final String vkLogin,
-                                      final String vkPassword) {
+                                      final String vkPassword,
+                                      final String captchaSid,
+                                      final String captchaKey) {
         AnswerInfo retResult = new AnswerInfo();
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "https://login.vk.com/?act=login";
+        final String urlPath = "http://login.vk.com/?act=login";
         HashMap<String, Object> cSendData = new HashMap<>();
 		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
                 mCookieManager, false, false);
@@ -427,8 +433,8 @@ public class EpicWarBot {
         cSendData.put("email", vkLogin);
         cSendData.put("pass", vkPassword);
         cSendData.put("expire", "");
-        cSendData.put("captcha_sid", "");
-        cSendData.put("captcha_key", "");
+        cSendData.put("captcha_sid", captchaSid);
+        cSendData.put("captcha_key", captchaKey);
         cSendData.put("_origin", "http://vk.com");
         cSendData.put("q", 1);
 
@@ -438,7 +444,7 @@ public class EpicWarBot {
             mVkId = getTextForPattern(retDict.getResponseStr(),
                     "parent.onLoginDone\\('/id(.*?)'\\);");
             String idCaptcha = getTextForPattern(retDict.getResponseStr(),
-                    "parent.onLoginCaptcha\\('(.*?)','.*?'\\);");
+                    "parent.onLoginCaptcha\\('(.*?)',.*?\\);");
 //            HashMap<String, String> vkPairs = findPairsInText(
 //                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
 //                    "[,\\s\\n\\r]*([^:]*):\\s*([^\\n^\\r^,]*)");
@@ -450,13 +456,24 @@ public class EpicWarBot {
                             retDict.getStatus().toString(),
                             false, "");
                 } else {
-                    retResult.set("Not connected!",
-                            retDict.getStatus().toString(),
-                            true, "Authorization problem: vkId == 0 " + retDict.getResponseStr());
+                    String failedLogin = getTextForPattern(retDict.getResponseStr(),
+                            "parent.onLoginFailed\\(.*?,\\s*(.*?)\\);");
+                    if(failedLogin.isEmpty()) {
+                        retResult.set("Not connected!",
+                                retDict.getStatus().toString(),
+                                true, "Authorization problem: vkId == 0 "
+                                        + retDict.getResponseStr());
+                    } else {
+                        retResult.set("Not connected!",
+                                retDict.getStatus().toString(),
+                                true, "Authorization problem: wrong login/pass");
+                    }
+
                 }
             } else {
-                retResult.set("Not connected!", retDict.getStatus().toString(),
+                retResult.set("CAPTCHA", idCaptcha,
                         true, "Authorization problem: captcha found!");
+                retResult.addValue("CAPTCHA", idCaptcha);
             }
         } else {
             Log.d(LOG_TAG, "retStatus = " + retDict.getStatus().toString());
@@ -1340,7 +1357,7 @@ public class EpicWarBot {
                                                final CookieManager cm,
                                                final HttpURLConnection rqt)
             throws IOException {
-        final int connectTimeout = 1000;
+        final int connectTimeout = 10000;
         final int readTimeout = 15000;
         //ReturnData responseData = new ReturnData();
         int httpResult;

@@ -12,4 +12,5 @@ interface IBotServiceCallback {
     //void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat, double aDouble, String aString);
     oneway void onTaskResult(in AnswerInfo result);
     oneway void onGetLog(in String logText);
+    oneway void onCaptcha(in String captchaSid);
 }

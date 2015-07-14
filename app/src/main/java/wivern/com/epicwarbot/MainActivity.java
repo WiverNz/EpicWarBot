@@ -2,29 +2,39 @@ package wivern.com.epicwarbot;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Dialog;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
-//import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 //import android.widget.Toast;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
+import android.content.DialogInterface.OnDismissListener;
+import android.content.DialogInterface.OnShowListener;
 
 /**
  * @since 1.0
@@ -68,7 +78,11 @@ public class MainActivity extends Activity
         /**
          * disconnected msg.
          */
-        DISCONNECT(5);
+        DISCONNECT(5),
+        /**
+         * captcha.
+         */
+        CAPTCHA(6);
         /**
          * int value.
          */
@@ -150,6 +164,11 @@ public class MainActivity extends Activity
      * edit text field for vk password.
      */
     private EditText mEtVkPassword;
+
+    /**
+     * captcha dialog.
+     */
+    final int CAPTCHA_DIALOG = 1;
 
     /**
      * on create activity.
@@ -261,12 +280,23 @@ public class MainActivity extends Activity
                         msg.setData(sendData);
                         mHandler.sendMessage(msg);
                     }
+
                     @Override
                     public void onGetLog(final String logText) {
                         Message msg = new Message();
                         msg.what = MsgId.SET_LOG_TEXT.getValue();
                         Bundle sendData = new Bundle();
                         sendData.putString("logText", logText);
+                        msg.setData(sendData);
+                        mHandler.sendMessage(msg);
+                    }
+
+                    @Override
+                    public void onCaptcha(String captchaSid) {
+                        Message msg = new Message();
+                        msg.what = MsgId.CAPTCHA.getValue();
+                        Bundle sendData = new Bundle();
+                        sendData.putString("CAPTCHA", captchaSid);
                         msg.setData(sendData);
                         mHandler.sendMessage(msg);
                     }
@@ -284,6 +314,11 @@ public class MainActivity extends Activity
                 }
                 mStartService = false;
                 Log.d(LOG_TAG, "Service connected");
+                try {
+                    mServiceApi.initVkConnection();
+                } catch (RemoteException e) {
+                    Log.d(LOG_TAG, "addCallback error: " + e.toString());
+                }
             }
 
             /**
@@ -330,8 +365,7 @@ public class MainActivity extends Activity
         }
         currText = currText + "\n";
         mEtTasksLog.setText(currText + mEtTasksLog.getText().toString());
-        if(ai.isbError())
-        {
+        if (ai.isbError()) {
             Log.d(LOG_TAG, ai.getSzInfo() + " :: " + ai.getError());
         }
         //mEtTasksLog.append(currText, 0, currText.length());
@@ -339,6 +373,92 @@ public class MainActivity extends Activity
         //        result, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * on captcha.
+     *
+     * @param captchaSid captcha sid
+     */
+    public final void onNeedCaptcha(final String captchaSid) {
+        String currCaptcha = "http://vk.com/captcha.php?s=1&sid=" + captchaSid;
+        captchaDialog(currCaptcha);
+    }
+
+    /**
+     * create captcha dialog.
+     * @param captchaUrl captcha url
+     */
+    private void captchaDialog(final String captchaUrl)
+    {
+        android.widget.LinearLayout linLayout = new android.widget.LinearLayout(this);
+        linLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        LayoutParams linLayoutParam = new LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT);
+        LayoutParams lpView = new LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT);
+        URL url = null;
+        try {
+            url = new URL(captchaUrl);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return;
+        }
+        Bitmap bmp = null;
+        try {
+            bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        android.widget.ImageView iv = new android.widget.ImageView(this);
+        iv.setImageBitmap(bmp);
+        linLayout.addView(iv);
+
+        final android.widget.EditText tvCaptcha = new android.widget.EditText(this);
+        tvCaptcha.setLayoutParams(lpView);
+        linLayout.addView(tvCaptcha);
+
+        android.app.AlertDialog.Builder adb = new android.app.AlertDialog.Builder(this);
+        adb.setTitle("Enter captcha");
+        adb.setView(linLayout);
+        adb.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int whichButton) {
+                String newCaptcha = tvCaptcha.getText().toString();
+                if(!newCaptcha.isEmpty()) {
+                    setNewCaptcha(newCaptcha);
+                }
+                return;
+            }
+        });
+        Dialog dialog = adb.create();
+        dialog.setOnDismissListener(new OnDismissListener() {
+            public void onDismiss(DialogInterface dialog) {
+                String newCaptcha = tvCaptcha.getText().toString();
+                if(!newCaptcha.isEmpty()) {
+                    setNewCaptcha(newCaptcha);
+                }
+                return;
+            }
+        });
+        dialog.show();
+    }
+
+    /**
+     * continue with capcha.
+     */
+    private void setNewCaptcha(final String newCaptcha) {
+        String newCaptcha2 = newCaptcha;
+        //        if (mBound) {
+//            try {
+//                mServiceApi.setCurrServiceCaptcha(currCaptchaKey);
+//                mServiceApi.initVkConnection();
+//            } catch (RemoteException e) {
+//                e.printStackTrace();
+//            }
+//        }
+    }
     /**
      * set params from service to main activity.
      * this must be in main activity thread
@@ -547,6 +667,16 @@ public class MainActivity extends Activity
                                     sendData.getString("logText");
                             if (logText != null) {
                                 mActivity.setLogFromService(logText);
+                            }
+                        }
+                        break;
+                    case CAPTCHA:
+                        sendData = msg.getData();
+                        if (sendData != null) {
+                            String captchaSid =
+                                    sendData.getString("CAPTCHA");
+                            if (captchaSid != null) {
+                                mActivity.onNeedCaptcha(captchaSid);
                             }
                         }
                         break;
