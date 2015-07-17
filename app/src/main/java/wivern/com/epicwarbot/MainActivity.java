@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -35,6 +36,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.content.DialogInterface.OnShowListener;
+import android.widget.ImageView;
 
 /**
  * @since 1.0
@@ -404,15 +406,8 @@ public class MainActivity extends Activity
             e.printStackTrace();
             return;
         }
-        Bitmap bmp = null;
-        try {
-            bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
         android.widget.ImageView iv = new android.widget.ImageView(this);
-        iv.setImageBitmap(bmp);
+        new LoadImageTask(iv).execute(url);
         linLayout.addView(iv);
 
         final android.widget.EditText tvCaptcha = new android.widget.EditText(this);
@@ -435,10 +430,6 @@ public class MainActivity extends Activity
         Dialog dialog = adb.create();
         dialog.setOnDismissListener(new OnDismissListener() {
             public void onDismiss(DialogInterface dialog) {
-                String newCaptcha = tvCaptcha.getText().toString();
-                if(!newCaptcha.isEmpty()) {
-                    setNewCaptcha(newCaptcha);
-                }
                 return;
             }
         });
@@ -449,15 +440,14 @@ public class MainActivity extends Activity
      * continue with capcha.
      */
     private void setNewCaptcha(final String newCaptcha) {
-        String newCaptcha2 = newCaptcha;
-        //        if (mBound) {
-//            try {
-//                mServiceApi.setCurrServiceCaptcha(currCaptchaKey);
-//                mServiceApi.initVkConnection();
-//            } catch (RemoteException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        if (mBound) {
+            try {
+                mServiceApi.setCurrServiceCaptcha(newCaptcha);
+                mServiceApi.initVkConnection();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
     /**
      * set params from service to main activity.
@@ -687,4 +677,31 @@ public class MainActivity extends Activity
         }
 
     }
+
+    private class LoadImageTask extends AsyncTask<URL, Void, Bitmap> {
+        ImageView tIV;
+        public LoadImageTask(ImageView iv){
+            tIV = iv;
+        }
+
+        @Override
+        protected Bitmap doInBackground(URL... urls) {
+            Bitmap networkBitmap = null;
+            URL networkUrl = urls[0]; //Load the first element
+            try {
+                networkBitmap = BitmapFactory.decodeStream(
+                        networkUrl.openConnection().getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return networkBitmap;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            tIV.setImageBitmap(result);
+        }
+    }
+
 }

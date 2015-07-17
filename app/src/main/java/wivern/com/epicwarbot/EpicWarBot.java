@@ -402,39 +402,51 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "http://login.vk.com/?act=login";
+        final String urlPath = "http://login.vk.com/";
         HashMap<String, Object> cSendData = new HashMap<>();
-		ReturnData retDictNew = getPost(newUrlPath, "GET", cSendData, null,
-                mCookieManager, false, false);
         String lg_h = "";
         String ip_h = "";
-		if (retDictNew.getStatus() == Status.SUCCESS) {
-            ip_h = getTextForPattern(retDictNew.getResponseStr(),
-                    "<input type=\"hidden\" name=\"ip_h\" value=\"(.*?)\"\\s*/>");
-            lg_h = getTextForPattern(retDictNew.getResponseStr(),
-                    "<input type=\"hidden\" name=\"lg_h\" value=\"(.*?)\"\\s*/>");
-            if (ip_h.isEmpty() || lg_h.isEmpty()) {
-                retResult.set("ip_h lg_h empty",
+        ReturnData retDictNew;
+        if(captchaSid.isEmpty()) {
+            retDictNew = getPost(newUrlPath, "GET", cSendData, null,
+                    mCookieManager, false, false);
+            if (retDictNew.getStatus() == Status.SUCCESS) {
+                ip_h = getTextForPattern(retDictNew.getResponseStr(),
+                        "<input type=\"hidden\" name=\"ip_h\" value=\"(.*?)\"\\s*/>");
+                lg_h = getTextForPattern(retDictNew.getResponseStr(),
+                        "<input type=\"hidden\" name=\"lg_h\" value=\"(.*?)\"\\s*/>");
+                if (ip_h.isEmpty() || lg_h.isEmpty()) {
+                    retResult.set("ip_h lg_h empty",
+                            retDictNew.getStatus().toString(),
+                            true, "");
+                    return retResult;
+                }
+            } else {
+                retResult.set("Error connect to vk.com",
                         retDictNew.getStatus().toString(),
-                        true, "");
+                        true, newUrlPath);
                 return retResult;
             }
-		}
-		else {
-            retResult.set("Error connect to vk.com",
-                    retDictNew.getStatus().toString(),
-                    true, newUrlPath);
-			return retResult;
-		}
-        cSendData.put("act", "login");
+        }
+        if(!captchaSid.isEmpty()) {
+            cSendData.put("act", "a_login_attempt");
+            cSendData.put("email", vkLogin);
+            cSendData.put("captcha_sid", captchaSid);
+            cSendData.put("captcha_key", captchaKey);
+            cSendData.put("ip_h", ip_h);
+            cSendData.put("lg_h", lg_h);
+        }
+        else {
+            cSendData.put("act", "login");
+            cSendData.put("ip_h", ip_h);
+            cSendData.put("lg_h", lg_h);
+            cSendData.put("email", vkLogin);
+            cSendData.put("pass", vkPassword);
+            cSendData.put("expire", "");
+            cSendData.put("captcha_sid", captchaSid);
+            cSendData.put("captcha_key", captchaKey);
+        }
         cSendData.put("role", "al_frame");
-        cSendData.put("ip_h", ip_h);
-        cSendData.put("lg_h", lg_h);
-        cSendData.put("email", vkLogin);
-        cSendData.put("pass", vkPassword);
-        cSendData.put("expire", "");
-        cSendData.put("captcha_sid", captchaSid);
-        cSendData.put("captcha_key", captchaKey);
         cSendData.put("_origin", "http://vk.com");
         cSendData.put("q", 1);
 
@@ -458,15 +470,21 @@ public class EpicWarBot {
                 } else {
                     String failedLogin = getTextForPattern(retDict.getResponseStr(),
                             "parent.onLoginFailed\\(.*?,\\s*(.*?)\\);");
-                    if(failedLogin.isEmpty()) {
+                    String failedReLogin = getTextForPattern(retDict.getResponseStr(),
+                            "parent.onReLoginFailed\\(.*?\\);");
+                    if(!failedLogin.isEmpty()) {
+                        retResult.set("Not connected!",
+                                retDict.getStatus().toString(),
+                                true, "Authorization problem: wrong login/pass");
+                    } else if (!failedReLogin.isEmpty()) {
+                        retResult.set("Not connected!",
+                                retDict.getStatus().toString(),
+                                true, "Authorization problem: relogin failed");
+                    } else {
                         retResult.set("Not connected!",
                                 retDict.getStatus().toString(),
                                 true, "Authorization problem: vkId == 0 "
                                         + retDict.getResponseStr());
-                    } else {
-                        retResult.set("Not connected!",
-                                retDict.getStatus().toString(),
-                                true, "Authorization problem: wrong login/pass");
                     }
 
                 }
