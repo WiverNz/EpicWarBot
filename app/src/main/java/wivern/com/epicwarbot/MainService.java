@@ -99,7 +99,7 @@ public class MainService extends Service {
         } else {
             mLogText = currText + mLogText;
         }
-        mLogText = mLogText.substring(0, 1000);
+        mLogText = mLogText.substring(0, Math.min(mLogText.length(), 1000));
     }
 
     /**
@@ -256,8 +256,12 @@ public class MainService extends Service {
         }
 
         @Override
-        public boolean isVkConnected() throws RemoteException {
-            return mEpicBot != null && mEpicBot.isVkConnected();
+        public boolean isVkConnected() {
+            boolean vkConnected;
+            synchronized (this) {
+                vkConnected = checkVkConnected();
+            }
+            return vkConnected;
         }
 
         @Override
@@ -305,6 +309,13 @@ public class MainService extends Service {
 
     };
 
+    /**
+     * check is vk connected.
+     * @return flag vk connected
+     */
+    public final boolean checkVkConnected() {
+        return mEpicBot != null && mEpicBot.isVkConnected();
+    }
     /**
      * chec internet connection.
      * @return true - internet is on

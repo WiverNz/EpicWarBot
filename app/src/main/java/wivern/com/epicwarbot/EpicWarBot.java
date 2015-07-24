@@ -601,6 +601,7 @@ public class EpicWarBot {
         final int refId = 9;
         final int rndVer = 237;
         final int al = -1;
+        //mCookieManager = new CookieManager(); test after restart service
         Log.d(LOG_TAG, "GameConnect");
         AnswerInfo retResult = new AnswerInfo();
         if (!mVkConnected) {
