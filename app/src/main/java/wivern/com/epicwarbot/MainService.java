@@ -18,6 +18,8 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import com.google.gson.Gson;
+
 import java.net.CookieManager;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -43,6 +45,10 @@ public class MainService extends Service {
      * notify icon status.
      */
     private static final int PLAYBACK_SERVICE_STATUS = 1;
+    /**
+     * cookie string tag for save.
+     */
+    private static final String PREF_SESSION_COOKIE = "session_cookie";
     /**
      * main timer.
      */
@@ -136,7 +142,12 @@ public class MainService extends Service {
         bss.setInterval(sPref.getInt("INTERVAL", 0));
         boolean vkConnected = sPref.getBoolean("VKCONNECTED", false);
         if (vkConnected) {
-            // need to restore cookie
+            String jsonSessionCookie = sPref.getString(PREF_SESSION_COOKIE, "");
+            if(!jsonSessionCookie.isEmpty()) {
+                Gson gson = new Gson();
+                CookieManager cm = gson.fromJson(jsonSessionCookie, CookieManager.class);
+                mEpicBot.setCookies(cm);
+            }
         }
 
         return bss;
@@ -162,7 +173,9 @@ public class MainService extends Service {
         ed.putBoolean("VKCONNECTED", mEpicBot != null && mEpicBot.isVkConnected());
         if(mEpicBot != null && mEpicBot.isVkConnected()) {
             CookieManager cm = mEpicBot.getCookies();
-            // need save cookie
+            Gson gson = new Gson();
+            String jsonSessionCookieString = gson.toJson(cm);
+            ed.putString(PREF_SESSION_COOKIE, jsonSessionCookieString);
         }
         ed.apply();
     }
