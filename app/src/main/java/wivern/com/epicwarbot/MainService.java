@@ -114,6 +114,7 @@ public class MainService extends Service {
         restartMainTaskAlarm();
         //schedule();
         updateNotification();
+        mEpicBot = new EpicWarBot();
     }
 
     /**
@@ -314,13 +315,13 @@ public class MainService extends Service {
      */
     private void initializeVkConnection() {
         Log.d(LOG_TAG, "IN initializeVkConnection");
-        mEpicBot = new EpicWarBot();
-//            final int proxyPort = 8888;
-//            EpicWarBot.setUseProxy(true);
-//            EpicWarBot.setProxy("192.168.0.4", proxyPort);
-//        final int proxyPort = 8089;
+//        final int proxyPort = 8888;
 //        EpicWarBot.setUseProxy(true);
-//        EpicWarBot.setProxy("136.0.16.217", proxyPort);
+//        EpicWarBot.setProxy("192.168.0.4", proxyPort);
+
+//        final int proxyPort = 8080;
+//        EpicWarBot.setUseProxy(true);
+//        EpicWarBot.setProxy("176.31.170.136", proxyPort);
         //EpicWarBot.testConnection();
         AnswerInfo ai;
         if (!isNetworkConnected()) {

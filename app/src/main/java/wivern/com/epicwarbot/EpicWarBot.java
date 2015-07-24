@@ -319,6 +319,14 @@ public class EpicWarBot {
      */
     private static int mReadTimeout = DEFAULT_READ_TIMEOUT;
     /**
+     * last capt lg.
+     */
+    private static String mLastLgH;
+    /**
+     * last capt hg.
+     */
+    private static String mLastIpH;
+    /**
      * default constructor.
      */
     EpicWarBot() {
@@ -402,60 +410,88 @@ public class EpicWarBot {
         init(false);
         Log.d(LOG_TAG, "vkConnect: " + vkLogin);
 		final String newUrlPath = "http://vk.com";
-        final String urlPath = "http://login.vk.com/";
+        final String urlPath = "https://login.vk.com/";
+        final String urlTryCaptcha = "http://vk.com/login.php";
+        //{"ok":-2,"difficult":1,"captcha_sid":"274919481063","text":"Enter code"}
+        //vklogin
         HashMap<String, Object> cSendData = new HashMap<>();
         String lg_h = "";
         String ip_h = "";
         ReturnData retDictNew;
-        if(captchaSid.isEmpty()) {
-            retDictNew = getPost(newUrlPath, "GET", cSendData, null,
-                    mCookieManager, false, false);
-            if (retDictNew.getStatus() == Status.SUCCESS) {
-                ip_h = getTextForPattern(retDictNew.getResponseStr(),
-                        "<input type=\"hidden\" name=\"ip_h\" value=\"(.*?)\"\\s*/>");
-                lg_h = getTextForPattern(retDictNew.getResponseStr(),
-                        "<input type=\"hidden\" name=\"lg_h\" value=\"(.*?)\"\\s*/>");
-                if (ip_h.isEmpty() || lg_h.isEmpty()) {
-                    retResult.set("ip_h lg_h empty",
-                            retDictNew.getStatus().toString(),
-                            true, "");
+        ReturnData retDict;
+        String idCaptcha;
+        cSendData.put("op", "a_login_attempt");
+        cSendData.put("login", vkLogin);
+        if (!captchaSid.isEmpty()) {
+            cSendData.put("captcha_sid", captchaSid);
+        }
+        if (!captchaKey.isEmpty()) {
+            cSendData.put("captcha_key", captchaKey);
+        }
+        retDict = getPost(urlTryCaptcha, "GET", cSendData, null,
+                mCookieManager, false, false);
+        if (retDict.getStatus() == Status.SUCCESS) {
+            if (!retDict.getResponseStr().contains("vklogin")) {
+                HashMap<String, String> vkPairs = findPairsInText(
+                        retDict.getResponseStr(), "\\{(.*?)\\}",
+                        "[,\\s\\n\\r]*\"([^:]*)\":\\s*([^\\n^\\r^,]*)");
+                if (vkPairs.containsKey("captcha_sid")) {
+                    idCaptcha = vkPairs.get("captcha_sid");
+                    idCaptcha = idCaptcha.replace("\"", "");
+                    retResult.set("CAPTCHA", idCaptcha,
+                            true, "Authorization problem: captcha found!");
+                    retResult.addValue("CAPTCHA", idCaptcha);
                     return retResult;
                 }
-            } else {
-                retResult.set("Error connect to vk.com",
-                        retDictNew.getStatus().toString(),
-                        true, newUrlPath);
-                return retResult;
             }
         }
+
+        cSendData.clear();
+        retDictNew = getPost(newUrlPath, "GET", cSendData, null,
+                mCookieManager, false, false);
+        if (retDictNew.getStatus() == Status.SUCCESS) {
+            ip_h = getTextForPattern(retDictNew.getResponseStr(),
+                    "<input type=\"hidden\" name=\"ip_h\" value=\"(.*?)\"\\s*/>");
+            lg_h = getTextForPattern(retDictNew.getResponseStr(),
+                    "<input type=\"hidden\" name=\"lg_h\" value=\"(.*?)\"\\s*/>");
+            if (ip_h.isEmpty() || lg_h.isEmpty()) {
+                retResult.set("ip_h lg_h empty",
+                        retDictNew.getStatus().toString(),
+                        true, "");
+                return retResult;
+            }
+            mLastIpH = ip_h;
+            mLastLgH = lg_h;
+        } else {
+            retResult.set("Error connect to vk.com",
+                    retDictNew.getStatus().toString(),
+                    true, newUrlPath);
+            return retResult;
+        }
+        cSendData.put("act", "login");
+        cSendData.put("email", vkLogin);
+        cSendData.put("pass", vkPassword);
         if(!captchaSid.isEmpty()) {
-            cSendData.put("act", "a_login_attempt");
-            cSendData.put("email", vkLogin);
-            cSendData.put("captcha_sid", captchaSid);
-            cSendData.put("captcha_key", captchaKey);
-            cSendData.put("ip_h", ip_h);
-            cSendData.put("lg_h", lg_h);
+            cSendData.put("ip_h", mLastIpH);
+            cSendData.put("lg_h", mLastLgH);
         }
         else {
-            cSendData.put("act", "login");
             cSendData.put("ip_h", ip_h);
             cSendData.put("lg_h", lg_h);
-            cSendData.put("email", vkLogin);
-            cSendData.put("pass", vkPassword);
-            cSendData.put("expire", "");
-            cSendData.put("captcha_sid", captchaSid);
-            cSendData.put("captcha_key", captchaKey);
         }
+        cSendData.put("captcha_sid", captchaSid);
+        cSendData.put("captcha_key", captchaKey);
+        cSendData.put("expire", "");
         cSendData.put("role", "al_frame");
         cSendData.put("_origin", "http://vk.com");
         cSendData.put("q", 1);
 
-        ReturnData retDict = getPost(urlPath, "POST", cSendData, null,
+        retDict = getPost(urlPath, "POST", cSendData, null,
                 mCookieManager, false, false);
         if (retDict.getStatus() == Status.SUCCESS) {
             mVkId = getTextForPattern(retDict.getResponseStr(),
                     "parent.onLoginDone\\('/id(.*?)'\\);");
-            String idCaptcha = getTextForPattern(retDict.getResponseStr(),
+            idCaptcha = getTextForPattern(retDict.getResponseStr(),
                     "parent.onLoginCaptcha\\('(.*?)',.*?\\);");
 //            HashMap<String, String> vkPairs = findPairsInText(
 //                    retDict.getResponseStr(), "var vk\\s*=\\s*\\{(.*?)\\}",
@@ -471,15 +507,16 @@ public class EpicWarBot {
                     String failedLogin = getTextForPattern(retDict.getResponseStr(),
                             "parent.onLoginFailed\\(.*?,\\s*(.*?)\\);");
                     String failedReLogin = getTextForPattern(retDict.getResponseStr(),
-                            "parent.onReLoginFailed\\(.*?\\);");
+                            "parent.onReLoginFailed\\((.*?)\\);");
                     if(!failedLogin.isEmpty()) {
                         retResult.set("Not connected!",
                                 retDict.getStatus().toString(),
-                                true, "Authorization problem: wrong login/pass");
+                                true, "Authorization problem: wrong login/pass " + failedLogin
+                                + " rl:" + vkLogin);
                     } else if (!failedReLogin.isEmpty()) {
                         retResult.set("Not connected!",
                                 retDict.getStatus().toString(),
-                                true, "Authorization problem: relogin failed");
+                                true, "Authorization problem: relogin failed " + failedReLogin);
                     } else {
                         retResult.set("Not connected!",
                                 retDict.getStatus().toString(),

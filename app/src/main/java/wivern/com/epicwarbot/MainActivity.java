@@ -381,7 +381,7 @@ public class MainActivity extends Activity
      * @param captchaSid captcha sid
      */
     public final void onNeedCaptcha(final String captchaSid) {
-        String currCaptcha = "http://vk.com/captcha.php?s=1&sid=" + captchaSid;
+        String currCaptcha = "http://vk.com/captcha.php?sid=" + captchaSid;
         captchaDialog(currCaptcha);
     }
 
