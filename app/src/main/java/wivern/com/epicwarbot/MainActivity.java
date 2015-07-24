@@ -316,8 +316,11 @@ public class MainActivity extends Activity
                 }
                 mStartService = false;
                 Log.d(LOG_TAG, "Service connected");
+
                 try {
-                    mServiceApi.initVkConnection();
+                    if(!mServiceApi.isVkConnected()) {
+                        mServiceApi.initVkConnection();
+                    }
                 } catch (RemoteException e) {
                     Log.d(LOG_TAG, "addCallback error: " + e.toString());
                 }

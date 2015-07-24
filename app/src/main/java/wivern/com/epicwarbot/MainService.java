@@ -18,6 +18,7 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import java.net.CookieManager;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -98,6 +99,7 @@ public class MainService extends Service {
         } else {
             mLogText = currText + mLogText;
         }
+        mLogText = mLogText.substring(0, 1000);
     }
 
     /**
@@ -110,11 +112,11 @@ public class MainService extends Service {
         super.onCreate();
         Log.d(LOG_TAG, "IN onCreate");
         addLogText("Restart service", null);
+        mEpicBot = new EpicWarBot();
         mBotSettings = readSettingsFromPreferences();
         restartMainTaskAlarm();
         //schedule();
         updateNotification();
-        mEpicBot = new EpicWarBot();
     }
 
     /**
@@ -132,6 +134,10 @@ public class MainService extends Service {
         bss.setFlagCemetery(sPref.getBoolean("CEMETERY", false));
         bss.setFlagGifts(sPref.getBoolean("GIFTS", false));
         bss.setInterval(sPref.getInt("INTERVAL", 0));
+        boolean vkConnected = sPref.getBoolean("VKCONNECTED", false);
+        if (vkConnected) {
+            // need to restore cookie
+        }
 
         return bss;
     }
@@ -153,6 +159,11 @@ public class MainService extends Service {
         ed.putBoolean("CEMETERY", bss.getFlagCemetery());
         ed.putBoolean("GIFTS", bss.getFlagGifts());
         ed.putInt("INTERVAL", bss.getInterval());
+        ed.putBoolean("VKCONNECTED", mEpicBot != null && mEpicBot.isVkConnected());
+        if(mEpicBot != null && mEpicBot.isVkConnected()) {
+            CookieManager cm = mEpicBot.getCookies();
+            // need save cookie
+        }
         ed.apply();
     }
 
@@ -242,6 +253,11 @@ public class MainService extends Service {
             synchronized (this) {
                 mCallbacks.unregister(listener);
             }
+        }
+
+        @Override
+        public boolean isVkConnected() throws RemoteException {
+            return mEpicBot != null && mEpicBot.isVkConnected();
         }
 
         @Override
@@ -338,7 +354,6 @@ public class MainService extends Service {
         }
         else if (ai.isbError()) {
             sendAnswerToClients(ai);
-            return;
         }
     }
     /**

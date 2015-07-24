@@ -327,6 +327,28 @@ public class EpicWarBot {
      */
     private static String mLastIpH;
     /**
+     * is connected.
+     * @retrun is vk connected
+     */
+    public final boolean isVkConnected() {
+        return mVkConnected;
+    }
+    /**
+     * get cookies.
+     * @return cookies
+     */
+    public final CookieManager getCookies() {
+        return mCookieManager;
+    }
+    /**
+     * set cookies.
+     * @param cookies cookies
+     */
+    public final void setCookies(CookieManager cookies) {
+        mCookieManager = cookies;
+    }
+
+    /**
      * default constructor.
      */
     EpicWarBot() {

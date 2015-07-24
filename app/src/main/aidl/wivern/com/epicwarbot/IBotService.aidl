@@ -17,6 +17,8 @@ interface IBotService {
     void addCallback(in IBotServiceCallback listener);
     // remove callback listener from service (sync)
     void removeCallback(in IBotServiceCallback listener);
+    // get state of vk connection (sync)
+    boolean isVkConnected();
     // do all bot task (async)
     oneway void doAllTask();
     oneway void initVkConnection();
